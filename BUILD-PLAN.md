@@ -1,8 +1,14 @@
 # Build plan
 
-The system is one flow: **User → ElevenLabs Agent → MCP → Data source.** The agent is the
-only decision-maker and the only connector between the caller and the data. There is no
-separate frontend, repair loop, or backing services beyond these three components.
+The system is two flows sharing one agent:
+
+1. **Data-query flow:** User → ElevenLabs Agent → MCP → Data source. The agent is the
+   decision-maker and the only connector between the caller and the data.
+2. **Support loop:** User (mid-call or at the end of a call) → ElevenLabs Agent → a
+   webhook tool, outside MCP → ticket database → Linear issue → Devin, which resolves
+   the ticket or flags that an engineer is needed.
+
+There is no separate frontend or other backing service beyond these.
 
 The one thing that cannot be cut: the agent answering a real question by calling MCP and
 getting real data back.
@@ -16,6 +22,7 @@ getting real data back.
 | **A** | Data | The data source the MCP server reads from |
 | **B** | Voice Agent | ElevenLabs agent — prompt, decision logic for which MCP tool to call and when, voice/accent tuning, `ElevenLabsAgent/sync-agent.ts` |
 | **C** | MCP | MCP server, its tools, deploy, wire + verify the agent actually invokes each tool |
+| **D** | Support loop | Ticket database, the webhook the agent calls to file an issue, Linear team + Devin integration, engineer-escalation flag |
 
 ---
 
@@ -26,6 +33,7 @@ getting real data back.
 | B | ElevenLabs → Integrations → **enable custom MCP servers** | Off by default per workspace. Silent failure otherwise: C's tools exist but the agent never calls them |
 | A | Confirm data source access | C is blocked without something to query |
 | C | Confirm MCP server hosting target (public HTTPS, streamable HTTP) | ElevenLabs does not support stdio — the server must be reachable over HTTPS from minute zero |
+| D | Stand up the ticket database, confirm Linear team + Devin integration installed | B needs a real webhook endpoint before the agent's complaint-handling can be wired and tested |
 
 ---
 
@@ -56,6 +64,19 @@ with C before C starts wiring tool logic against it.
 Tools should return in under 1.5s with small payloads — a slow tool stalls the agent
 mid-sentence, which in a voice interface reads as a hang.
 
+## D — Support loop
+
+| Step | Task |
+|---|---|
+| 1 | Stand up the ticket database and a webhook endpoint the agent can call to file an issue |
+| 2 | Wire ticket creation → Linear issue, assigned to Devin |
+| 3 | Confirm Devin resolves what it can and flags tickets it can't as needing an engineer |
+| 4 | Give B the webhook endpoint + payload shape so the agent's prompt and tool config can be finalised |
+
+This is deliberately not an MCP tool — it doesn't query A's data source and isn't
+latency-sensitive the same way a data lookup is. Keep it a separate path so a caller
+complaint is never confused with "the data source had nothing."
+
 ---
 
 ## Dependency graph
@@ -66,4 +87,6 @@ A: data source ready ──> C: MCP tools can be built
 B: MCP workspace opt-in ──> C can attach tools to the agent
 
 C: MCP server live + registered ──> B can attach + verify tool calls
+
+D: ticket webhook live ──> B can wire + verify the agent's complaint-filing tool
 ```

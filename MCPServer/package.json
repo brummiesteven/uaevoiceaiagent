@@ -1,0 +1,16 @@
+{
+  "name": "dubai-open-data-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server over the Dubai open data catalogue (data.dubai)",
+  "scripts": {
+    "start": "node src/server.js",
+    "refresh": "node scripts/refresh-indicators.js",
+    "smoke": "node scripts/smoke.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "engines": { "node": ">=20" }
+}

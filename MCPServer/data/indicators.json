@@ -1,0 +1,132 @@
+{
+  "capturedAt": "2026-08-08",
+  "captureMethod": "context.dev web-scrape-markdown with country=ae (the F5 WAF on data.dubai rejects other routes)",
+  "sources": {
+    "homepage": "https://data.dubai/en/home",
+    "population": "https://data.dubai/en/population-now"
+  },
+  "note": "These figures are published on data.dubai's rendered pages and are NOT available through /o/c/datasets. Regenerate with `npm run refresh` instructions in scripts/refresh-indicators.js.",
+  "indicators": [
+    {
+      "key": "population",
+      "aliases": ["population", "how many people", "residents", "people live", "inhabitants"],
+      "name": "Dubai resident population",
+      "value": 4736383,
+      "display": "4.74 million",
+      "unit": "people",
+      "period": "live estimate",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/population-now",
+      "note": "Usual residents — people who have lived in Dubai at least six months or intend to. Updated continuously from administrative data."
+    },
+    {
+      "key": "daytime_population",
+      "aliases": ["daytime population", "during the day", "active individuals", "commuters", "people in the city"],
+      "name": "Active individuals in Dubai during daytime",
+      "value": 6390000,
+      "display": "6.39 million",
+      "unit": "people",
+      "period": "2025",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/population-now",
+      "note": "Includes 1.81 million daily commuters on top of the resident population."
+    },
+    {
+      "key": "inflation",
+      "aliases": ["inflation", "cost of living", "prices rising", "cpi", "consumer price"],
+      "name": "Annual inflation rate",
+      "value": 2.79,
+      "display": "2.79%",
+      "unit": "percent",
+      "period": "2025",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/home",
+      "relatedDataset": "Consumer Price Index - Base year 2021"
+    },
+    {
+      "key": "gdp_growth",
+      "aliases": ["gdp", "economy growing", "economic growth", "gross domestic product"],
+      "name": "Real GDP growth rate",
+      "value": 2.4,
+      "display": "2.4%",
+      "unit": "percent",
+      "period": "Q1 2026",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/home",
+      "relatedDataset": "Gross Domestic Product at Constant Prices - Yearly"
+    },
+    {
+      "key": "producer_prices",
+      "aliases": ["producer prices", "ppi", "wholesale prices"],
+      "name": "Annual change in producer prices",
+      "value": 0.77,
+      "display": "0.77%",
+      "unit": "percent",
+      "period": "2025",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/home"
+    },
+    {
+      "key": "new_residents",
+      "aliases": ["new residents", "moved to dubai", "population growth", "newcomers"],
+      "name": "New residents this year",
+      "value": 159000,
+      "display": "159,000",
+      "unit": "people",
+      "period": "2026 to date",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/population-now"
+    },
+    {
+      "key": "households",
+      "aliases": ["households", "families", "how many homes"],
+      "name": "Households in Dubai",
+      "value": 858000,
+      "display": "858,000",
+      "unit": "households",
+      "period": "2025",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/population-now",
+      "note": "Average household size is 4.2 people. 62,800 new households were added in 2025."
+    },
+    {
+      "key": "buildings",
+      "aliases": ["buildings", "how many buildings"],
+      "name": "Buildings in Dubai",
+      "value": 219000,
+      "display": "219,000",
+      "unit": "buildings",
+      "period": "2025",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/population-now"
+    },
+    {
+      "key": "housing_units",
+      "aliases": ["housing units", "homes", "apartments", "dwellings"],
+      "name": "Housing units in Dubai",
+      "value": 1000000,
+      "display": "1 million",
+      "unit": "housing units",
+      "period": "2025",
+      "source": "Dubai Data and Statistics Establishment",
+      "sourceUrl": "https://data.dubai/en/population-now"
+    }
+  ],
+  "populationProfile": {
+    "total": 4736383,
+    "totalDisplay": "4.74 million",
+    "asOf": "2025-2026",
+    "gender": {
+      "male": { "percent": 68.5, "count": 3138200 },
+      "female": { "percent": 31.5, "count": 1442100 }
+    },
+    "largestAgeGroup": { "range": "30-34", "percent": 15.45, "year": 2025 },
+    "newResidentsThisYear": 159000,
+    "households": { "count": 858000, "averageSize": 4.2, "addedIn2025": 62800 },
+    "buildings": 219000,
+    "housingUnits": 1000000,
+    "daytime": { "activeIndividuals": 6390000, "dailyCommuters": 1810000 },
+    "source": "Dubai Data and Statistics Establishment",
+    "sourceUrl": "https://data.dubai/en/population-now"
+  }
+}
