@@ -82,11 +82,10 @@ function loadSettings(): AgentSettings {
  * correctly. If this script also PATCHed mcp_server_ids, the two would fight over the
  * same field. Do not add MCP wiring here without removing it from reconnect.js first.
  *
- * One field is NOT confirmed: where language_detection goes. Two doc sources
- * disagreed (agent.prompt.built_in_tools vs. an entry inside agent.prompt.tools
- * shaped {type: "system", name: "language_detection"}). This emits the "tools array"
- * shape as the best-supported guess — verify with a GET on the real agent once one
- * exists, and fix here if wrong.
+ * language_detection placement CONFIRMED via a live PATCH + GET against a real agent:
+ * sending it as an entry inside agent.prompt.tools ({type: "system", name:
+ * "language_detection"}) is correct — the API accepts it and mirrors it into
+ * agent.prompt.built_in_tools.language_detection in its response.
  */
 function buildAgentPatch(prompt: string, settings: AgentSettings) {
   const promptConfig: Record<string, unknown> = {
