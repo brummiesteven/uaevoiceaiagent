@@ -1,0 +1,37 @@
+{
+  "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; scripts/sync-agent.ts PATCHes it to match this file on every push to main.",
+
+  "language": {
+    "mode": "multi",
+    "primary": "en",
+    "additional": ["ar"],
+    "_why": "Speaker in the architecture diagram is explicitly English + Arabic. Auto-detect/multi-language over locking to English-only, since misdetecting an Arabic-accented English caller as needing translation (or vice versa) is worse than the small added latency."
+  },
+
+  "asr": {
+    "model": "scribe_v1",
+    "_why": "ElevenLabs' native Scribe ASR — no custom/bolted-on STT layer, per TECH-SPEC's decision to avoid an extra round-trip inside the real-time loop."
+  },
+
+  "llm": {
+    "model": "gemini-2.0-flash",
+    "_why": "Placeholder — use whatever low-latency conversational model ElevenLabs currently recommends for real-time agents (Turbo-class). Confirm against current dashboard options before first sync."
+  },
+
+  "tts": {
+    "model": "eleven_turbo_v2_5",
+    "voice_id": "[FILL: voice selected in dashboard]"
+  },
+
+  "turn_taking": {
+    "interruption_sensitivity": "low",
+    "silence_end_call_timeout_ms": 30000,
+    "_why": "Non-native/accented speakers pause mid-sentence more than the default VAD assumes. Loosening interruption sensitivity avoids cutting callers off mid-thought. Tune further against A's real questions in the 1:00-2:00 tuning pass."
+  },
+
+  "pronunciation_dictionary": [],
+  "_pronunciation_dictionary_note": "Populate with UAE service/entity names once A's content/schema.ts and content/services/*.json land — generic ASR will mangle these.",
+
+  "mcp_tools": [],
+  "_mcp_tools_note": "Left empty on purpose. Populate once C's MCP server is live with the actual tool names/schemas (expected: find_service, get_required_documents, check_eligibility). Out of scope for this skeleton pass."
+}
