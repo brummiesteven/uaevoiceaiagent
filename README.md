@@ -1,159 +1,218 @@
-# [FILL: product name]
+# AlHammadi
 
-Voice access to UAE government services for People of Determination.
+Voice access to UAE government/open data, for people who find a phone call easier than a
+website. A caller speaks to an ElevenLabs voice agent, which is the single decision-maker
+in the system: it decides what to look up, calls the right tool on the MCP server, gets
+the data back, and speaks the answer.
 
-Government service information is spread across long pages, PDFs, and nested menus.
-This project turns a set of government service pages into a voice agent you can call
-and ask a plain-language question — and closes the loop when the agent gets it wrong.
+## The name
 
-**Live demo:** [FILL: Vercel URL]
-**Demo video:** [FILL: Loom link — set to "anyone with the link"]
+Named in honour of **Mohamed Al Hammadi**, the Emirati wheelchair racer who won the UAE's
+first Paralympic athletics gold in the 800m T34 at Rio 2016, and who also took medals at
+London 2012 and Tokyo.
 
-![Architecture: Context.dev extracts government pages into one JSON contract, which feeds the Next.js pages, the ElevenLabs knowledge base and the MCP server; the ElevenLabs agent handles the call and emits a transcript; flagged failures become Linear issues that Devin fixes by PR, and merging re-syncs the live agent.](docs/architecture.svg)
+Many of the people this is built for are People of Determination — someone who is blind
+or low-vision, has a motor impairment that makes forms difficult, or simply finds speaking
+easier than reading a dense government page. The name is a reminder of who the work is for.
 
----
+The name is a tribute. Mohamed Al Hammadi has no involvement in this project and has not
+endorsed it.
 
-## What it does
+## How it works
 
-1. **Scrapes** 3–5 government service pages with Context.dev into a single typed JSON shape.
-2. **Serves** that JSON three ways: accessible web pages, an ElevenLabs knowledge base, and an MCP server.
-3. **Answers** questions over voice via an ElevenLabs agent that cites its source and refuses to guess.
-4. **Repairs itself** — a caller flags a bad answer, that becomes a Linear issue with the
-   transcript, Devin opens a PR against the agent's prompt or content, and merging it
-   syncs the change straight back into the live agent.
+```
+User
+  │  opens the site, presses to talk
+  ▼
+Frontend (Next.js)  — service pages + voice console
+  │  live call — real ElevenLabs SDK session, once NEXT_PUBLIC_ELEVENLABS_AGENT_ID is set
+  ▼
+ElevenLabs Agent  (STT · LLM · TTS)
+  │  MCP — streamable HTTP
+  ▼
+MCP Server
+  │  queries
+  ▼
+Data source
+```
 
----
+**The voice call is simulated until you configure a live agent.** With no
+`NEXT_PUBLIC_ELEVENLABS_AGENT_ID` set, the frontend runs a scripted mock transport instead
+of a real session — the UI shows a visible "Simulated" banner while it does. This isn't a
+bug to hide; it's what lets the frontend run and be reviewed standalone, without every
+visitor needing a live ElevenLabs account behind it. See Setup below to make it live.
 
-## What you see
+Once live, the ElevenLabs agent is the bridge and the decision-maker for the whole system:
 
-**`/services/[slug]`** is the product — a service page with a voice agent attached, not a
-dashboard. The page and the agent read the same JSON, so the screen shows exactly what the
-agent knows. It moves through three states in place:
+1. The user speaks a question to the agent.
+2. The agent's LLM decides whether it needs data, and if so which MCP tool to call and
+   with what arguments.
+3. The MCP server runs the tool against the data source and returns the result.
+4. The agent turns that result into a spoken answer back to the user — nothing about the
+   tool call itself is ever spoken; see `ElevenLabsAgent/prompt.md`'s "Never narrate the
+   mechanism" rule.
 
-- **Idle** — plain-language summary, the call button above the fold, then who qualifies,
-  documents needed, costs and how to apply. Source link and helpline in the footer.
-- **In call** — the transcript renders live beneath the widget, with the agent's status as
-  text and a citation chip next to each grounded claim.
-- **After the call** — the transcript stays on the page, joined by a summary, the sources
-  used, and the feedback form that starts the repair loop.
+There is no separate orchestration layer between the agent and MCP, and no intermediate
+service the agent's decision passes through — the agent calls the MCP server directly.
 
-The live transcript is an accessibility requirement rather than a feature: a voice-only
-interface excludes deaf and hard-of-hearing users, and many people cannot retain spoken
-information on one hearing.
+See `docs/architecture.svg` for the diagram.
 
-**`/triage`** is an evidence board — one table showing each adversarial persona, whether it
-passed, its transcript, and the Linear issue and Devin PR any failure produced. It is
-unlinked and unauthenticated; all call data in this build is synthetic. See `TECH-SPEC.md`
-for why, and what that requires before real callers use it.
+## Support loop
 
----
+A second, separate flow handles a caller who is unhappy with the service or wants to
+report an issue — during the call or at its end. This is deliberately **not** an MCP
+tool: it doesn't query the data source, it doesn't need to be fast, and it shouldn't be
+confused with the data-lookup path.
 
-## Requirements
+```
+User (speaks/writes an issue, mid-call or at the end of the call)
+        │
+        ▼
+ElevenLabs Agent  — takes down the issue, calls a webhook tool (outside MCP)
+        │
+        ▼
+Ticket database  — a ticket row is written, before anything else can fail
+        │
+        ▼
+Linear issue  — created from the ticket, Devin mentioned to start a session
+        │
+        ▼
+Devin (Cognition)  — works the ticket
+   ├─ resolved → issue closed → the report closes with it
+   └─ can't resolve → labels it `needs-engineer` → Slack pings a human
+```
 
-- Node 20+
-- Accounts: [Context.dev](https://www.context.dev/), [ElevenLabs](https://elevenlabs.io/),
-  [Supabase](https://supabase.com/), [Linear](https://linear.app/), [Devin](https://devin.ai/)
-- A Vercel account for deployment
+A caller who took the trouble to report something has already spent their patience, so the
+row is written first and returned even if Linear is down — an un-ticketed report is still
+visible and still recoverable, a dropped one is gone.
 
----
+The loop is auditable end to end at `SupportLoop`'s `/triage`: every report, how it came
+in, what the caller said, and the Linear state read live on each load — through to the
+pull request that fixed it, without needing an account on our workspace. Slack is reserved
+for the two cases where the loop has stalled on a person: Devin was never reached, or Devin
+escalated. See `SupportLoop/README.md`.
+
+**This isn't wired to the live agent yet.** `ElevenLabsAgent/agent-settings.json`'s
+`tool_ids` is still empty — the webhook itself works (you can call it directly, and Devin
+has picked up and replied to a real ticket filed that way), but a caller talking to the
+live agent cannot file one through the call yet. See `TECH-SPEC.md` §5 for what's left.
+
+## Ownership
+
+| | Owns |
+|---|---|
+| **A** | Data source the MCP server reads from |
+| **B** | ElevenLabs agent — prompt, decision logic for which tool to call and when, voice/accent tuning. See `ElevenLabsAgent/` |
+| **C** | MCP server — tools, connects to the data source. See `MCPServer/` |
+| **D** | Frontend (service pages, voice console, persona-test `/triage`) and the support loop (ticket database, webhook, Linear → Devin wiring, Slack escalation, its own `/triage` audit trail). See `SupportLoop/` |
 
 ## Setup
 
+This repo holds **three separate Node projects** — the root frontend, `MCPServer/`, and
+`SupportLoop/` — each with its own `package.json`, install, and env vars. None of them
+depend on each other being installed to run standalone; the frontend just runs in
+simulated mode until the other two are live and its env vars point at them.
+
+### 1. Root — the frontend
+
 ```bash
-git clone [FILL: repo URL]
-cd [FILL: repo name]
+git clone <this repo>
+cd uaevoiceaiagent
 npm install
-cp .env.example .env.local
 ```
 
-Fill `.env.local`:
+Create `.env.local` in the repo root (there is no `.env.example` committed for it yet —
+these are the only env vars the app reads):
 
-| Variable | Where to get it |
-|---|---|
-| `CONTEXT_API_KEY` | Context.dev dashboard → API keys |
-| `ELEVENLABS_API_KEY` | ElevenLabs → Profile → API keys |
-| `ELEVENLABS_AGENT_ID` | ElevenLabs → Agents → your agent |
-| `ELEVENLABS_WEBHOOK_SECRET` | ElevenLabs → Webhooks (created when you add the post-call webhook) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project settings → API |
-| `LINEAR_API_KEY` | Linear → Settings → API → Personal API keys |
-| `LINEAR_TEAM_ID` | Linear → team settings, or `query { teams { nodes { id name } } }` |
-
-### One-time platform setup
-
-1. **Supabase** — run `supabase/schema.sql` in the SQL editor. Creates `call_feedback` and `tickets`.
-2. **ElevenLabs MCP opt-in** — MCP servers are disabled per workspace by default.
-   Enable it at Agents → Integrations before step 4, or the agent silently gets no tools.
-3. **ElevenLabs post-call webhook** — point it at `https://<your-deploy>/api/elevenlabs-webhook`,
-   event type `post_call_transcription`.
-4. **Register the MCP server** — Agents → Integrations → Add Custom MCP Server →
-   `https://<your-deploy>/api/mcp`, transport: HTTP streamable. Attach it to the agent.
-5. **Linear + Devin** — install the Devin integration in Linear so an assigned issue
-   starts a session.
-
----
-
-## Run
+| Variable | Required for | If unset |
+|---|---|---|
+| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | A real voice call | The voice console runs a scripted mock instead, with a visible "Simulated" banner |
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `/triage` showing real adversarial-test rows | `/triage` shows 5 hard-coded example rows and says so on the page |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | The WhatsApp CTA on the homepage | The CTA doesn't render at all |
 
 ```bash
-npm run scrape          # Context.dev → content/services/*.json  (commit the output)
-npm run sync:agent      # pushes agent-config/prompt.md + KB docs to ElevenLabs
-npm run dev             # http://localhost:3000
+npm run dev      # http://localhost:3000
 ```
 
-Re-scrape a single service after a government page changes:
+`ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` are also needed to run
+`npm run sync-agent` (pushes `ElevenLabsAgent/prompt.md` + `agent-settings.json` +
+`content/services/*.json` to the live agent) — same two values as
+`NEXT_PUBLIC_ELEVENLABS_AGENT_ID` and an ElevenLabs API key from your account's API Keys
+page.
+
+### 2. `MCPServer/` — C's MCP server
 
 ```bash
-npm run scrape -- sanad-card
+cd MCPServer
+npm install
+cp .env.example .env    # fill ELEVENLABS_API_KEY and AGENT_ID
+npm start                # http://localhost:8787
 ```
 
-### Adversarial test suite
+Needs a public HTTPS URL for ElevenLabs to reach it — see `MCPServer/SETUP.md` for the
+full 15-minute walkthrough (installing `cloudflared`, tunnelling, and registering it
+against your agent with `node scripts/reconnect.js <tunnel-url>`).
+
+### 3. `SupportLoop/` — D's ticket pipeline
 
 ```bash
-npm run test:adversarial          # 5 personas via ElevenLabs simulation tests
-npm run test:adversarial:audio    # 2 personas rendered to real audio (noise, code-switching)
+cd SupportLoop
+npm install
+cp .env.example .env.local   # Supabase, Linear, Slack — see the file, every integration degrades gracefully except SUPPORT_AGENT_SECRET
+npm run dev
 ```
 
-Results land in `scripts/adversarial/results/`.
+Full env var reference and setup order (Supabase schema first, then Linear, then Slack)
+in `SupportLoop/README.md`.
 
----
+### Requirements summary
 
-## Deploy
-
-```bash
-vercel --prod
-```
-
-Set the same env vars in the Vercel dashboard. Merging to `main` runs
-`.github/workflows/sync-agent.yml`, which re-runs `npm run sync:agent` — this is what
-makes a merged Devin PR take effect on the live agent without anyone touching a dashboard.
-
----
+- ElevenLabs account with an API token (agent side — B)
+- MCP server reachable over public HTTPS, streamable HTTP transport — ElevenLabs does not
+  support stdio (C)
+- Access to the data source the MCP server reads from — data.dubai's public API, no
+  credentials needed (A)
+- Supabase project, a Linear team with the Devin integration installed, a Slack incoming
+  webhook (D)
 
 ## Repo layout
 
 ```
+app/                      D — frontend: service pages, voice console
+components/                 voice console UI, WhatsApp CTA, display preferences
+lib/                         service-record loading, /triage data, voice call state
 content/
-  schema.ts                    the extraction contract — one shape, three consumers
-  services/*.json              Context.dev output (committed)
-agent-config/
-  prompt.md                    agent system prompt — Devin edits this
-scripts/
-  scrape.ts                    Context.dev crawl + structured extraction
-  sync-agent.ts                pushes prompt + KB to the live ElevenLabs agent
-  adversarial/                 the 5 caller personas
-app/
-  services/[slug]/page.tsx     service page + call widget + feedback form
-  triage/page.tsx              flagged calls and their tickets
-  api/mcp/route.ts             MCP server
-  api/feedback/route.ts        feedback → Supabase → Linear → Devin
-  api/elevenlabs-webhook/route.ts   attaches transcript to the feedback row
-supabase/schema.sql
-```
+  schema.ts                the content contract — service record shape
+  services/*.json          hand-written placeholder records (fixture: true) — not a real scrape yet
 
----
+ElevenLabsAgent/
+  prompt.md                agent system prompt — decision rules, citation/refusal behaviour
+  agent-settings.json       language, ASR, turn-taking, voice/accent tuning, MCP/tool ids
+  sync-agent.ts             pushes prompt + settings + content/services/* to the live agent
+
+MCPServer/                C — the MCP server, its tools and data
+  SETUP.md                  start here: nothing to a working voice agent, ~15 min
+  README.md                 tools, data sources, known landmines
+  agent-prompt.md           the prompt this was tested against, and why each rule exists
+
+SupportLoop/              D — the Next.js app behind the support flow
+  README.md                 the webhook contract for B, Slack/Linear setup, landmines
+  app/api/agent/ticket      the webhook the agent calls to file a report
+  app/api/linear-webhook    escalation in, Slack ping out
+  app/api/elevenlabs-webhook  post-call transcript, joined onto the report
+  app/triage                every report and where it got to, read live from Linear
+  app/report                fallback form for anyone not on a call
+  supabase/schema.sql       call_feedback and tickets
+```
 
 ## Known limits
 
-See `TECH-SPEC.md` → "What is real vs. what is v2". Short version: [FILL: 1 sentence,
-written at T+2:00 when the cut line lands].
+- The frontend's voice call is simulated by default (see How it works above) — it needs
+  `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` set to actually talk to the live agent.
+- The support loop's webhook works standalone but isn't attached to the live agent yet
+  (`tool_ids` empty) — a caller can't file a ticket through a real call today.
+- `content/services/*.json` are hand-written placeholders, not a verified scrape — see
+  `AGENTS.md` before quoting a value from one as fact.
+- Root `/triage` (persona test results) and `SupportLoop`'s `/triage` (ticket audit trail)
+  are two different pages with the same name — don't confuse them.
+- See `TECH-SPEC.md` §5 for the fuller real-vs-v2 list.

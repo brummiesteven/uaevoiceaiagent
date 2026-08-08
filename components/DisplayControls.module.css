@@ -1,0 +1,74 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.group {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.groupLabel {
+  composes: visually-hidden from global;
+}
+
+.sizeButton {
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0 0.9rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: none;
+  border-right: 2px solid var(--line-strong);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.sizeButton:last-child {
+  border-right: none;
+}
+
+.sizeButton[aria-pressed="true"] {
+  background: var(--teal);
+  color: var(--surface);
+}
+
+[data-contrast="high"] .sizeButton[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.contrastButton {
+  min-height: 56px;
+  padding: 0 1.1rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contrastButton[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #000 50%, #fff 50%);
+  border: 1px solid var(--line-strong);
+  flex-shrink: 0;
+}

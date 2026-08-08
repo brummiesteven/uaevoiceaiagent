@@ -1,305 +1,289 @@
 # TECH-SPEC
 
-## 1. The problem
+## 01. The problem
 
-UAE government service information is public but not accessible. A person of determination
-who wants to know whether they qualify for [FILL: the service you picked], what documents
-they need, and what it costs has to navigate a multi-level menu, read a long page written
-for administrators, and often open a PDF. Screen-reader users hit unlabelled nav. People
-with cognitive disabilities hit dense prose. People who are more comfortable speaking than
-reading hit a wall entirely.
+UAE government/open data is public but not accessible in the form most people can use.
+A person who wants an answer to a plain-language question has to find the right page,
+find the right dataset, and read it. That's a real barrier for anyone who finds speaking
+easier than reading a dense page, can't easily fill in a form, or is blind or low-vision —
+who this is built for, see "The name" in `README.md`.
 
-The information is not missing. It is unreachable by the people who most need it.
+**What we built:** a lightweight website hosts a voice console; a caller presses to talk
+and asks a question in plain language. An ElevenLabs agent decides what data it needs,
+calls the right tool on an MCP server, and speaks the answer back — no menu to navigate,
+no form to fill in, once the call starts. The website is a thin shell around that call, not
+the product itself.
 
-**What we built:** you call a number-free voice agent from the service page and ask the
-question in plain language. It answers from the actual government page, cites where the
-answer came from, and hands you to a human when it does not know.
-
-**Why voice specifically:** [FILL: 2 sentences — tie to the specific access need, not to
-"voice is cool". e.g. motor impairment + form fields, low text literacy, blindness + PDFs.]
+**Why voice specifically:** reading a government page assumes you can see it, parse
+administrative language, and know which of several similar-sounding services applies to
+you. Speaking a question in your own words sidesteps all three — you don't need to find
+the right page if you can just ask.
 
 ---
 
-## 2. Architecture
-
-![Architecture: Context.dev extracts government pages into one JSON contract, which feeds the Next.js pages, the ElevenLabs knowledge base and the MCP server; the ElevenLabs agent handles the call and emits a transcript; flagged failures become Linear issues that Devin fixes by PR, and merging re-syncs the live agent.](docs/architecture.svg)
-
-<details>
-<summary>Text version of the diagram</summary>
+## 02. Architecture
 
 ```
-                    content/schema.ts  ← the data contract
-                            │
-   Context.dev ──crawl + structured extract──► content/services/*.json
-                            │
-        ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
-   Next.js pages     ElevenLabs KB         MCP server
-   (same JSON)       (prose RAG)           (/api/mcp)
-        │                   └────► ElevenLabs Agent ◄────┘
-        │                              │        ▲
-        │  feedback form               │ post-call webhook
-        └──────────────► Supabase ◄────┘        │
-                            │                   │ sync on merge
-                            ▼                   │
-                    Linear issue ──► Devin ──► PR to
-                                              agent-config/prompt.md
-                                              content/services/*.json
-                                                    │
-                              merge → GH Action → scripts/sync-agent.ts
-                                              → ElevenLabs API + Vercel
+User
+  │  opens the site, presses to talk
+  ▼
+Frontend (Next.js)  — service pages + voice console
+  │  live call — real ElevenLabs SDK session, once NEXT_PUBLIC_ELEVENLABS_AGENT_ID is set
+  ▼
+ElevenLabs Agent  (STT · LLM · TTS)
+  │  MCP — streamable HTTP
+  ▼
+MCP Server
+  │  queries
+  ▼
+Data source
 ```
 
-</details>
+**The frontend is a thin shell, and is honest when it's simulating.** With no
+`NEXT_PUBLIC_ELEVENLABS_AGENT_ID` configured, `lib/voice/useVoiceCall.ts` runs a scripted
+mock transport (`lib/voice/mockTransport.ts` + `mockAnswers.ts`) instead of a real
+ElevenLabs session, and the UI shows a visible "Simulated" banner while it does — this lets
+the frontend be reviewed and demoed without every environment needing a live agent behind
+it. Once the env var is set, `useConversation` from `@elevenlabs/react` opens a real
+WebRTC session against the live agent.
 
-### The data path
+Once live, the ElevenLabs agent is the only decision-maker and the only connector between
+the caller and the data:
 
-**One scrape, three consumers.** `content/schema.ts` defines the shape Context.dev extracts
-into. That same shape is the props for the web page, the document format uploaded to the
-ElevenLabs knowledge base, and the index the MCP tools query. Changing the schema changes
-all three. This is deliberate — it is why there is no separate CMS, no separate vector
-store, and no content sync job.
+1. The user speaks a question.
+2. The agent's LLM decides whether it needs data to answer, and if so, which MCP tool to
+   call and with what arguments.
+3. The MCP server executes the tool against the data source and returns a result.
+4. The agent turns that result into a spoken answer and delivers it to the user — nothing
+   about the tool call itself is ever spoken to the caller (see `ElevenLabsAgent/prompt.md`'s
+   "Never narrate the mechanism" rule, added after a live test showed the agent reading
+   `[Calling tool ...]` syntax and raw JSON out loud).
 
-**Static vs. dynamic split.** Prose (service descriptions, eligibility narrative, fees) goes
-into the ElevenLabs knowledge base and is retrieved by its built-in RAG. Structured lookups
-go through MCP tools:
+There is deliberately no orchestration layer between the agent and the MCP server, and no
+intermediate service sitting between the agent's decision and the tool call — the agent
+talks to MCP directly. Inserting an extra hop there adds a round-trip inside a real-time
+voice loop, and conversation quality degrades badly past ~800ms of dead air.
 
-| Tool | Returns |
-|---|---|
-| `find_service(query)` | matching service slugs + one-line summaries |
-| `get_required_documents(service_id)` | document checklist |
-| `check_eligibility(service_id, criteria)` | qualifies / does not / needs human review |
+### Roles
 
-Tools return in under 1.5s and return small payloads. A slow or verbose tool stalls the
-agent mid-sentence, which in a voice interface reads as a hang.
-
-### The customer surface
-
-**It is a service page with a voice agent attached, not a dashboard.** The page and the
-agent read the same JSON, so the screen is a visual rendering of exactly what the agent
-knows. Nothing is on the page the agent cannot discuss; nothing the agent claims is absent
-from the page. That property falls out of the single-schema decision above rather than
-being separately engineered.
-
-Two routes:
-
-- `/` — "What do you need help with?" 3–5 services as large targets. Nothing else.
-- `/services/[slug]` — the whole product, moving through three states in place.
-
-The page sections are not a design choice. They are `content/schema.ts` fields, and each
-one is simultaneously a page section, a knowledge base chunk, and an MCP tool return:
-
-| Schema field | Page section | Also feeds |
+| Component | Owner | Responsibility |
 |---|---|---|
-| `summary` | intro paragraph | knowledge base |
-| `whoQualifies[]` | Who qualifies | knowledge base + `check_eligibility` |
-| `documentsRequired[]` | Documents you need | `get_required_documents` |
-| `fees[]` | What it costs | knowledge base |
-| `howToApply[]` | How to apply | knowledge base |
-| `sourceUrl`, `lastScrapedAt` | footer citation | the agent's citation string |
+| Frontend | D | Service pages, voice console, persona-test `/triage`. See `app/`, `components/`, `lib/` |
+| ElevenLabs Agent | B | Prompt, decision logic (which tool to call and when), voice/accent tuning, citation and refusal behaviour |
+| MCP Server | C | Exposes tools, queries the data source, returns results the agent can turn into speech |
+| Data source | A | The underlying data the MCP server's tools read from |
+| Support loop | D | Ticket database, the webhook the agent calls to file an issue, Linear → Devin wiring, Slack escalation, its own `/triage` audit trail. See `SupportLoop/` |
 
-**Three states, one page.** Idle: summary, call button above the fold, the rendered
-sections, source citation and helpline in the footer. In call: the transcript renders live
-beneath the widget. After call: the transcript persists, joined by a plain-language summary,
-the citations the agent used, and the feedback form pre-filled with `conversation_id`.
+### Content contract (frontend + agent knowledge base)
 
-**The live transcript is an accessibility requirement, not a feature.** A voice-only
-interface excludes deaf and hard-of-hearing users — it would be differently inaccessible
-rather than accessible. Rendering the agent's speech as text during and after the call is
-what makes the dual-modality claim true. It also serves people who cannot retain spoken
-information on one hearing, which is a large share of the intended audience.
+`content/schema.ts` is a separate contract from the MCP tools above — it feeds the
+frontend's static service pages (`app/services/[slug]/page.tsx`) and, via
+`ElevenLabsAgent/sync-agent.ts`, prose into the agent's knowledge base (RAG). Every record
+under `content/services/*.json` currently has `fixture: true` — they're hand-written
+placeholders written to unblock the frontend build, not a real scrape. It has no
+relationship to `MCPServer/`'s tools, which are independently coded against data.dubai and
+Context.dev-captured snapshots (see §03).
 
-Consequence for implementation: we use the `@elevenlabs/react` SDK rather than the drop-in
-`<elevenlabs-convai>` embed. The embed is faster to wire but is a black box that does not
-surface message events, so a self-rendered transcript, inline citation chips, and text
-status announcements are all impossible with it. Roughly thirty minutes of additional work
-buys the entire accessibility argument.
+### Tool contract
 
-**What the customer surface deliberately does not have:** accounts, call history, saved
-services, personalisation, and a text chat input. If a screen would only make sense to a
-returning logged-in user, it is v2. The intended user has one task and may perform it once.
+MCP tools return small, fast payloads — under 1.5s. A slow or verbose tool stalls the
+agent mid-sentence, which in a voice interface reads as a hang. Exact tool names/schemas
+are owned by C; the agent's prompt (owned by B) is what decides when each one gets called.
 
-### The repair path
+### Grounding and refusal
 
-1. Call ends. Caller uses the post-call form to flag a bad answer. Row written to
-   `call_feedback` with `conversation_id` and the caller's note.
-2. ElevenLabs fires `post_call_transcription` to `/api/elevenlabs-webhook`. We join on
-   `conversation_id` and attach the full transcript to the row.
-3. `/api/feedback` opens a Linear issue containing the note, the transcript, and the
-   service involved, and assigns it to Devin.
-4. Devin opens a PR against `agent-config/prompt.md` (behavioural fix) or
-   `content/services/*.json` (factual fix, optionally by re-running `npm run scrape`).
-5. **Merging that PR runs `scripts/sync-agent.ts`,** which PATCHes the live agent's prompt
-   and re-uploads knowledge base documents via the ElevenLabs API, and redeploys the MCP
-   server and frontend on Vercel.
+Every factual claim the agent makes should trace back to a tool result — the agent does
+not answer from general knowledge. If the MCP server has no data for a question, the
+agent says so plainly and does not guess. See `ElevenLabsAgent/prompt.md` for the exact
+rules.
 
-Step 5 is the point of the project. Without it the loop is a ticketing system.
+### Support loop — a second, separate flow
 
----
+If a caller is unhappy with the service, or wants to report an issue, that is handled by
+a second flow, deliberately kept apart from the data-query flow above:
 
-## 3. Tool rationale
+```
+User (speaks/writes an issue — mid-call or at the end of the call)
+        │
+        ▼
+ElevenLabs Agent  — takes down the issue, calls a webhook tool (outside MCP)
+        │
+        ▼
+Ticket database  — a ticket row is written, before anything else can fail
+        │
+        ▼
+Linear issue  — created from the ticket, Devin mentioned to start a session
+        │
+        ▼
+Devin (Cognition)  — works the ticket
+   ├─ resolved → issue closed → the report closes with it
+   └─ can't resolve → labels it `needs-engineer`
+                          │
+                          ▼
+                   Linear webhook → Slack — a named human is now on the hook
+```
 
-### Context.dev — the data contract
+This is **not** an MCP tool call. MCP tools exist to answer the caller's question from
+the data source under a 1.5s budget; filing an issue is neither a data lookup nor
+latency-sensitive in the same way, and conflating the two paths would make it unclear
+which failures belong to "the agent couldn't find data" versus "the agent itself failed
+the caller." The agent reaches the ticket-filing webhook directly, the same way it
+reaches MCP directly — no orchestration layer here either.
 
-Used for structured extraction against our own JSON schema, not just markdown conversion.
-That is what makes it load-bearing rather than a one-off convenience: five government pages
-with five different layouts come back in one identical shape, and three downstream systems
-depend on that shape.
+**This webhook is built and independently verified (Devin has picked up and replied to a
+real ticket filed through it), but is not yet attached to the live agent** —
+`ElevenLabsAgent/agent-settings.json`'s `tool_ids` is empty, so a caller talking to the
+live agent cannot file a ticket through the call today. See §05.
 
-Remove it and there is no content contract — the frontend, the knowledge base, and the MCP
-index all lose their source.
+The flag is the `needs-engineer` label in Linear, and that is the whole escalation
+contract: no extra service, no polling job, no state of our own to keep in sync, and a
+human can raise it by hand for the same effect. A Linear webhook turns the label into a
+Slack message the moment it lands, which is what stops the flag from depending on someone
+happening to open `/triage`. Nothing else pings Slack — a channel that fires on every
+caller report gets muted, and a muted channel loses the escalations too.
 
-*Alternative rejected:* hand-writing the JSON. Faster for five pages, but it does not scale
-to the [FILL: number] services in v2, and it gives us no refresh path when a government page
-changes.
-
-### ElevenLabs — the agent and the evidence
-
-Two load-bearing roles:
-
-1. **The agent.** It is the orchestrator during a call — STT, LLM turn, TTS, turn-taking,
-   interruption handling, and knowledge base RAG. We deliberately did **not** build a custom
-   orchestration layer between the MCP server and the agent: that inserts an extra LLM
-   round-trip inside a real-time loop, and voice conversation degrades badly past ~800ms of
-   dead air.
-2. **The test harness and the evidence trail.** The adversarial suite uses ElevenLabs'
-   simulation test type for text-layer failures and ElevenLabs TTS to render caller audio
-   for acoustic failures. The post-call webhook is what produces the transcript the repair
-   loop consumes.
-
-Remove it and there is no call, and no failure signal to repair from.
-
-### Devin — the repair path
-
-Devin is in the deployed system, not just in our editor. It consumes tickets generated by
-real call failures and opens PRs against a deliberately narrow surface:
-`agent-config/prompt.md` and `content/services/*.json`.
-
-The surface is narrow on purpose. Config-as-code that an agent can edit correctly in fifteen
-minutes is a real capability; asking an agent to refactor application code inside a build
-window is not.
-
-Remove it and flagged failures accumulate as tickets that nobody actions.
-
-### Interface decisions, and what we rejected
-
-**No admin authentication, and no unified portal.** The customer surface and the internal
-view share almost nothing: one is a first-time visitor on a screen reader who needs plain
-language and large targets, the other is us, twice, reading a dense table during a demo. A
-unified portal forces shared navigation and layout on two things with opposing
-requirements, and the customer page ends up inheriting admin chrome — which actively
-damages the accessibility goal. Concretely, auth would have cost the frontend owner 30–45
-minutes taken directly from the accessibility work.
-
-`/triage` is therefore a separate, unlinked, unauthenticated route. **All call data in this
-build is synthetic, generated by the adversarial suite; no member of the public has used
-the system, so no personal data exists in it.** Authentication and role-based access are v2
-and are required before any real caller touches it.
-
-**`/triage` is an evidence board, not an analytics dashboard.** We considered call-volume
-metrics, success-rate charts, and common-question breakdowns and rejected them: over the
-fourteen or so calls this build will generate, a time series is visual padding, and sparse
-charts signal that the loop has not actually run. The page instead shows the adversarial
-run as one table with expandable rows — persona, pass/fail, call count, transcript, and the
-Linear issue and Devin PR each failure produced. It exists so a reviewer can verify this
-document against the running system in ten seconds.
-
-**No accessibility overlay widget.** Third-party accessibility toolbars are opposed by
-screen-reader users and disability advocacy organisations, and they do not fix underlying
-markup. Accessibility here is semantic HTML, correct heading order, live regions, focus
-management and contrast — written that way from the first commit rather than retrofitted.
-For the same reason there is no dark-mode toggle and no font-size switcher: the browser and
-the operating system already provide both, better than we would.
-
-### Supporting choices
-
-- **Next.js on Vercel** — one deployment holds the frontend, the MCP route, the feedback
-  API, and the webhook receiver. Four services would have been four sets of env vars and
-  four things to debug.
-- **Supabase** — one Postgres, two tables (`call_feedback`, `tickets`). Not two databases.
-- **Linear** — the Devin integration means assignment starts a session; no glue code.
+The order matters: the report row is written before Linear is called, and returned even if
+Linear fails. Losing a report to an integration outage is the one failure this loop exists
+to prevent.
 
 ---
 
-## 4. Build-window feasibility
+## 03. Tool rationale — why ElevenLabs / Context.dev / Devin, specifically
 
-Window: [FILL: N] hours. Team: 5.
+### ElevenLabs — the agent layer
 
-| Owner | 0:00 | 1:00 | 2:00 | 2:30–3:00 |
-|---|---|---|---|---|
-| P1 | agent + prompt + refusal guardrail | tune, wire MCP tools | `sync-agent.ts` | agent frozen |
-| P2 | Context.dev schema + scrape | KB upload + RAG index | adversarial personas | capture results |
-| P3 | MCP server, 3 tools | deploy + wire to agent | join P2 on audio personas | — |
-| P4 | Next.js service page from JSON | call widget + feedback form | accessibility pass | — |
-| P5 | Supabase + feedback → Linear → Devin | README | TECH-SPEC | submission + Loom |
+The agent is the orchestrator for the entire call — STT, LLM turn, TTS, turn-taking, and
+interruption handling all happen inside it. We deliberately did not build a custom
+orchestration layer between the MCP server and the agent, for the latency reason in §02.
 
-**Sequencing constraints that actually bind:**
+Remove the agent and there is no call and no way for the user to reach the data at all —
+it is the only interface to the system.
 
-- ElevenLabs MCP is disabled per workspace by default. Enabling it is minute zero, or P3's
-  work cannot be attached to the agent at all.
-- P2's schema must land before P3 and P4 start, since both read that shape. It is the only
-  hard dependency in the graph.
-- The Devin session fires at T+1:30 so it has time to produce something inside the window.
-- P5 writes documentation while the build happens, not after it.
+*Model choice within ElevenLabs matters too:* `gemini-2.0-flash` was tried first as the
+agent's LLM and did not reliably call tools — when it skipped a tool call it filled the gap
+with an invented population figure rather than admitting it didn't know. `claude-sonnet-5`
+called tools reliably in the same test and is what's configured in
+`ElevenLabsAgent/agent-settings.json`.
 
-**Cut line at T+2:00.** Anything not working is demoted to section 5 rather than left
-half-built. The only thing that cannot be cut is the agent answering a real question from
-scraped content with a citation.
+### Context.dev — capturing what isn't in a live API
 
-**What we cut before starting, and why:**
+`MCPServer/data/indicators.json` (headline statistics — population, inflation, GDP growth)
+and `MCPServer/data/living-in-dubai.json` (DEWA utility tariffs, People of Determination
+entitlements from RTA and Parkin) are both captured with Context.dev, per
+`MCPServer/README.md`. This data is real but genuinely unreachable any other way in this
+build's timeframe: it's published only on rendered data.dubai pages, DEWA's site, and
+RTA/Parkin's sites — not exposed through any API. Context.dev did the structured
+extraction from those rendered pages so the MCP server could serve it from memory instead
+of scraping live on every call.
 
-- A custom orchestration layer between MCP and the agent — latency, described above.
-- Two live agents duplexing a real phone call — telephony plumbing with no demo payoff over
-  a rendered caller.
-- Full Arabic support — [FILL: partial or none]. RTL layout without a native speaker
-  reviewing the copy would be worse than honest English-only.
+This is separate from `content/services/*.json` (§02) — those are hand-written frontend
+fixtures, not Context.dev output. Only `MCPServer/`'s data was actually captured this way.
 
----
+*Alternative rejected:* hand-writing the same figures, the way `content/services/*.json`
+currently is. Faster to start, but with no source-of-truth link back to the page it came
+from, and no repeatable refresh path if a tariff or entitlement changes.
 
-## 5. What is real vs. what is v2
+### Devin — first responder on every ticket
 
-Written at T+2:00 against the actual commit history. Be exact here — an overclaim costs
-more than an omission.
+Devin is genuinely wired into the deployed system, not just available in principle: it's
+mentioned via `@devin` on every Linear issue the support loop creates
+(`SupportLoop/lib/linear.ts`), and has picked up and replied to a real ticket filed through
+the webhook. Why an autonomous coding agent rather than routing straight to a human
+on-call: most tickets are the same two shapes (§AGENTS.md — a behavioural prompt fix or a
+stale content fact), narrow enough for Devin to fix correctly without needing a person to
+context-switch first. The `needs-engineer` escalation exists specifically for the tickets
+that aren't that shape, so this isn't a bet that Devin can close everything — it's a filter
+that keeps a human from being paged for a one-line prompt fix.
 
-### Working in the submitted build
-
-- [FILL]
-- [FILL]
-
-### Partially working
-
-- [FILL: e.g. "Devin opened a session and posted a scoped plan; the PR was not merged
-  inside the window."]
-
-### Not built — v2
-
-- **Wider service coverage.** [FILL: N] services now; the schema and scrape script already
-  generalise, the constraint was Context.dev credits and review time.
-- **Arabic, properly.** RTL layout, Arabic TTS voice, and a native-speaker review of every
-  scraped fact.
-- **Authentication and role-based access.** Required before any real caller uses the system,
-  since `/triage` exposes transcripts. Unnecessary in this build because every transcript in
-  it is synthetic.
-- **Operational analytics.** Call volume, resolution rate, and question clustering become
-  meaningful at a few hundred calls. At fourteen they would be decoration.
-- **Human handoff that actually transfers.** Today the agent gives the helpline number; v2
-  warm-transfers to a staffed line.
-- **Continuous adversarial regression.** Run the persona suite on every merged Devin PR so
-  a fix cannot silently break a previously passing case.
-- **Verified-fix loop.** Today a merged PR syncs to the agent. v2 re-runs the specific
-  failing conversation against the patched agent and closes the Linear issue only if it
-  now passes.
-- [FILL: anything you cut at 2:00]
+*A real integration bug surfaced while wiring this, worth recording as evidence Devin is
+actually integrated and not just planned:* Linear's `issueCreate` API accepts an
+`assigneeId` for the Devin app user and returns success, but silently does not assign the
+issue. The `@devin` mention in a comment is what actually starts a session — the code
+verifies this by reading the result back rather than trusting the mutation. See
+`TECH-SPEC.md` §06.
 
 ---
 
-## 6. Honest risks
+## 04. Feasibility — scoping to 6 hours
 
-- **Wrong answers about entitlements are a real harm,** not a demo bug. The agent is
-  instructed to cite a source URL for every factual claim and to refuse when RAG returns
-  nothing, handing off to [FILL: helpline]. That path is demonstrated deliberately in the
-  video rather than hidden.
-- **Scraped content goes stale** when a government page changes. `npm run scrape -- <slug>`
-  is the refresh path; nothing automatic runs today.
-- **Not an official service.** No affiliation with any UAE government entity. Built on
-  publicly accessible pages; `robots.txt` checked before scraping.
+Four people, four independently-buildable pieces, one dependency that had to land first:
+
+- **A — data source.** Turned out to have no build cost: data.dubai's catalogue API is
+  live and public, no credentials needed. This freed A's time rather than costing it.
+- **B — the ElevenLabs agent.** Scoped to config-as-code (`ElevenLabsAgent/`) rather than
+  a custom application: a system prompt, a settings file, and a sync script that PATCHes
+  the real ElevenLabs API. No orchestration layer, no custom STT/TTS pipeline — deliberately
+  ruled out up front (§02) because building one would have both cost hours and made the
+  call slower.
+- **C — the MCP server.** The one true dependency: nothing else can be verified against
+  real tool calls until an MCP server exists. Scoped to two endpoints off one codebase
+  (`/mcp/voice` — 10 tools for the agent, `/mcp` — all 20, for any other MCP client) rather
+  than building two servers, and to an in-memory catalogue (hydrated once at boot) rather
+  than a database, which is why tool calls return in single-digit milliseconds internally.
+- **D — frontend + support loop.** Split into two independently-shippable halves: a
+  frontend that works even with nothing else running (mock transport, §02) so it never
+  blocked on B or C being live, and a support loop that's a genuinely separate Next.js app
+  (`SupportLoop/`) rather than routes bolted onto the frontend — so a bug in one couldn't
+  take down the other, and each could be tested against its own real API (Linear, Supabase,
+  Slack) independently.
+
+**What got cut to fit the window, deliberately, not by accident:**
+- A real content-scrape pipeline for `content/services/*.json` — hand-written fixtures
+  stand in for it (§02, §05).
+- Wiring the support-loop webhook onto the live agent's `tool_ids` — the webhook itself was
+  built and verified standalone instead, which was enough to prove the pattern works
+  without spending the remaining time on ElevenLabs-side tool registration.
+- A single unified app — three separate Node projects, each independently deployable and
+  testable, cost more setup overhead than one monolith would have, but meant no team member
+  was blocked waiting on another's code to build cleanly (see `0e3efb2`'s TypeScript-project
+  exclusion fix, needed only because they're separate projects sharing a repo).
+
+---
+
+## 05. Extensibility — what v2 looks like
+
+- **Wire the support loop onto the live agent.** Register `file_issue` as a webhook tool
+  and populate `ElevenLabsAgent/agent-settings.json`'s `tool_ids` — the single largest gap
+  between "built" and "usable end to end," since the webhook itself already works.
+- **Make the live voice call the default**, not opt-in. Requires a stable, non-tunnel
+  deployment of `MCPServer/` (today it's local + `cloudflared`, which changes URL on every
+  restart) and documenting/provisioning `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` for real
+  deployments.
+- **Replace `content/services/*.json`'s hand-written fixtures with a real Context.dev
+  scrape**, the same pattern already proven for `MCPServer/`'s data (§03) — `fixture: true`
+  is the flag that marks exactly which records still need this.
+- **Replace root `/triage`'s hard-coded example rows with live Supabase data** — the
+  fallback already exists and is honest about being a fallback; wiring
+  `NEXT_PUBLIC_SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` for that specific table is what's
+  left.
+- **Reconcile the two servers' conflicting data.** `MCPServer/` and the frontend's
+  `content/services/determination-parking-permit.json` fixture describe the same parking
+  permit with different issuer, fee, and helpline — worth resolving before either is
+  treated as authoritative in a demo.
+- **Notify the caller when their ticket closes.** Today nothing writes back to the person
+  who reported an issue — `/triage` and Linear both know the state, the caller doesn't.
+- **Continuous adversarial regression** — run the persona test suite behind root `/triage`
+  against every merged Devin PR automatically, rather than as a manual check.
+
+---
+
+## 06. Honest risks
+
+- **Wrong or unsupported answers are a real harm,** not a demo bug — the agent should
+  cite what backs a claim and refuse rather than guess when the MCP server returns
+  nothing.
+- **Data can go stale.** `MCPServer/`'s Context.dev-captured figures (§03) are a
+  point-in-time snapshot with no automatic refresh; `content/services/*.json`'s fixtures
+  are explicitly unverified placeholders until the real scrape (§05) replaces them.
+- **A ticket that Devin can't resolve and that never reaches an engineer is worse than no
+  loop at all** — it looks handled but isn't. Closed by pushing the `needs-engineer` label
+  to Slack rather than waiting for someone to open `/triage`. The residual risk is the
+  Slack webhook failing silently; `/triage` still lists escalations first as the backstop,
+  and a missing `SLACK_WEBHOOK_URL` is called out on the page.
+- **Linear will not assign an issue to the Devin app user** — it accepts `assigneeId`,
+  returns success, and leaves the issue with whoever owns the API key. Mentioning `@devin`
+  in a comment is what actually starts a session, so the handoff is verified by reading the
+  result back rather than trusting the mutation. Left unchecked this is the failure mode
+  where the whole loop looks green and reaches nobody.
+- **Not an official service.** No affiliation with any UAE government entity or with
+  Mohamed Al Hammadi (see `README.md`).
