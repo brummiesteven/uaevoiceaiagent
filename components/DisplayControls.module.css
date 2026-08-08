@@ -7,7 +7,7 @@
 
 .group {
   display: inline-flex;
-  border: 2px solid var(--line-strong);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -48,7 +48,7 @@
   padding: 0 1.1rem;
   background: var(--surface);
   color: var(--ink);
-  border: 2px solid var(--line-strong);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   font-weight: 700;
   font-size: 0.95rem;

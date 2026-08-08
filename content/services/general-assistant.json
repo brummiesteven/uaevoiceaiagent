@@ -1,0 +1,21 @@
+{
+  "slug": "general-assistant",
+  "name": "Alhamadi",
+  "publisher": "UAE Government Services (demo)",
+  "summary": "Ask about any UAE government service in plain language — eligibility, documents, fees, or how to apply.",
+  "whoQualifies": [],
+  "documentsRequired": [],
+  "fees": [],
+  "processingTime": "",
+  "howToApply": [],
+  "sourceUrl": "https://example.gov.ae",
+  "lastScrapedAt": "2026-08-01",
+  "exampleQuestions": [
+    "What documents do I need for a Sanad Card?",
+    "Do I qualify for the parking permit?",
+    "How much does a Sanad Card cost?",
+    "How do I apply for a parking permit?",
+    "How long does approval usually take?"
+  ],
+  "fixture": true
+}

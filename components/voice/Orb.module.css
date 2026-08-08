@@ -1,0 +1,49 @@
+.orb {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 30%, var(--orb-a), transparent 60%),
+    radial-gradient(circle at 70% 40%, var(--orb-b), transparent 55%),
+    radial-gradient(circle at 50% 75%, var(--orb-c), transparent 60%),
+    linear-gradient(160deg, var(--orb-a), var(--orb-c));
+  filter: saturate(1.15);
+}
+
+.orb::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.35), transparent 55%);
+  mix-blend-mode: overlay;
+  animation: drift 14s ease-in-out infinite;
+}
+
+.orb[data-active="true"]::before {
+  animation-duration: 5s;
+}
+
+[data-contrast="high"] .orb {
+  background: var(--ink);
+  filter: none;
+}
+
+[data-contrast="high"] .orb::before {
+  display: none;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, -4%) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb::before {
+    animation: none;
+  }
+}

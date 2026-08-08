@@ -6,92 +6,103 @@
 
   --text-scale: 1;
 
-  /* Light palette: deep teal ink on a pale sage paper, warm brass accent. */
-  --ink: #14302c;
-  --ink-soft: #3d5650;
-  --paper: #f0f4f1;
+  /* Minimal neutral palette — quiet chrome, the orb carries the color. */
+  --ink: #14161a;
+  --ink-soft: #6b7076;
+  --paper: #fafaf8;
   --surface: #ffffff;
-  --line: #d7ddd6;
-  --line-strong: #b7c1b8;
-  --teal: #1f6f6b;
-  --teal-soft: #e4efee;
-  --amber: #b9791f;
-  --amber-strong: #8f5c14;
-  --amber-soft: #f7ecd9;
-  --error: #a03e29;
+  --line: #e9e8e4;
+  --line-strong: #d7d5cf;
+  --accent: #14161a;
+  --accent-ink: #fafaf8;
+  --teal: #1f8f7f;
+  --teal-soft: #e7f4f1;
+  --error: #ab3f2f;
   --error-soft: #f8e6e1;
-  --good: #2e7d5b;
-  --good-soft: #e4f1ea;
-  --focus-ring: #14302c;
+  --good: #1f8f5f;
+  --good-soft: #e4f4ec;
+  --focus-ring: #14161a;
+
+  /* Orb gradient stops. */
+  --orb-a: #1f8f7f;
+  --orb-b: #2f8fd8;
+  --orb-c: #6a6fe0;
 
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
 
-  --shadow-card: 0 1px 2px rgba(20, 48, 44, 0.06), 0 8px 24px rgba(20, 48, 44, 0.06);
+  --shadow-card: 0 1px 2px rgba(20, 22, 26, 0.04), 0 8px 24px rgba(20, 22, 26, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --ink: #e9f0ec;
-    --ink-soft: #aebdb7;
-    --paper: #0f1e1b;
-    --surface: #162925;
-    --line: #274039;
-    --line-strong: #375750;
-    --teal: #7fd1c8;
-    --teal-soft: #16332f;
-    --amber: #e6ac4c;
-    --amber-strong: #f2c477;
-    --amber-soft: #2e2413;
+    --ink: #f2f2ef;
+    --ink-soft: #9a9d9f;
+    --paper: #0a0b0c;
+    --surface: #141516;
+    --line: #232427;
+    --line-strong: #34363a;
+    --accent: #f2f2ef;
+    --accent-ink: #0a0b0c;
+    --teal: #5fd6c1;
+    --teal-soft: #123430;
     --error: #e2917c;
     --error-soft: #35201b;
-    --good: #7fcba7;
-    --good-soft: #16322a;
-    --focus-ring: #e9f0ec;
+    --good: #74d9a6;
+    --good-soft: #113325;
+    --focus-ring: #f2f2ef;
+    --orb-a: #29c9ac;
+    --orb-b: #4bb3f0;
+    --orb-c: #8b8ff5;
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --ink: #14302c;
-  --ink-soft: #3d5650;
-  --paper: #f0f4f1;
+  --ink: #14161a;
+  --ink-soft: #6b7076;
+  --paper: #fafaf8;
   --surface: #ffffff;
-  --line: #d7ddd6;
-  --line-strong: #b7c1b8;
-  --teal: #1f6f6b;
-  --teal-soft: #e4efee;
-  --amber: #b9791f;
-  --amber-strong: #8f5c14;
-  --amber-soft: #f7ecd9;
-  --error: #a03e29;
+  --line: #e9e8e4;
+  --line-strong: #d7d5cf;
+  --accent: #14161a;
+  --accent-ink: #fafaf8;
+  --teal: #1f8f7f;
+  --teal-soft: #e7f4f1;
+  --error: #ab3f2f;
   --error-soft: #f8e6e1;
-  --good: #2e7d5b;
-  --good-soft: #e4f1ea;
-  --focus-ring: #14302c;
+  --good: #1f8f5f;
+  --good-soft: #e4f4ec;
+  --focus-ring: #14161a;
+  --orb-a: #1f8f7f;
+  --orb-b: #2f8fd8;
+  --orb-c: #6a6fe0;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ink: #e9f0ec;
-  --ink-soft: #aebdb7;
-  --paper: #0f1e1b;
-  --surface: #162925;
-  --line: #274039;
-  --line-strong: #375750;
-  --teal: #7fd1c8;
-  --teal-soft: #16332f;
-  --amber: #e6ac4c;
-  --amber-strong: #f2c477;
-  --amber-soft: #2e2413;
+  --ink: #f2f2ef;
+  --ink-soft: #9a9d9f;
+  --paper: #0a0b0c;
+  --surface: #141516;
+  --line: #232427;
+  --line-strong: #34363a;
+  --accent: #f2f2ef;
+  --accent-ink: #0a0b0c;
+  --teal: #5fd6c1;
+  --teal-soft: #123430;
   --error: #e2917c;
   --error-soft: #35201b;
-  --good: #7fcba7;
-  --good-soft: #16322a;
-  --focus-ring: #e9f0ec;
+  --good: #74d9a6;
+  --good-soft: #113325;
+  --focus-ring: #f2f2ef;
+  --orb-a: #29c9ac;
+  --orb-b: #4bb3f0;
+  --orb-c: #8b8ff5;
 }
 
 /* High contrast forces pure black-on-white and thickens structural lines,
@@ -104,11 +115,10 @@
   --surface: #ffffff;
   --line: #000000;
   --line-strong: #000000;
+  --accent: #000000;
+  --accent-ink: #ffffff;
   --teal: #000000;
   --teal-soft: #ffffff;
-  --amber: #000000;
-  --amber-strong: #000000;
-  --amber-soft: #ffffff;
   --error: #000000;
   --error-soft: #ffffff;
   --good: #000000;

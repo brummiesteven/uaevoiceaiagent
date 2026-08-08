@@ -1,0 +1,42 @@
+.wrap {
+  min-height: 1.6em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prompt {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  text-align: center;
+  animation: fade 3.6s ease-in-out infinite;
+}
+
+[data-contrast="high"] .prompt {
+  color: var(--ink);
+}
+
+@keyframes fade {
+  0%,
+  8% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  18%,
+  82% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prompt {
+    animation: none;
+  }
+}

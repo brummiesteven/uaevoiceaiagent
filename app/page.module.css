@@ -1,56 +1,54 @@
 .wrap {
-  max-width: 60rem;
+  max-width: 42rem;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
-}
-
-.lede {
-  font-size: 1.1rem;
-  color: var(--ink-soft);
-  max-width: 40rem;
-}
-
-.grid {
-  list-style: none;
-  margin: 2rem 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1.25rem;
-  max-width: none;
-}
-
-.card {
+  padding: 3rem 1.5rem 4rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  min-height: 56px;
-  padding: 1.5rem;
-  border: 2px solid var(--line-strong);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-  text-decoration: none;
-  color: var(--ink);
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
 }
 
-.cardName {
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.cardSummary {
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--ink-soft);
-  font-size: 0.95rem;
-  line-height: 1.45;
 }
 
-.cardCta {
-  margin-top: auto;
-  color: var(--teal);
-  font-weight: 700;
+.title {
+  margin: 0 0 1.5rem;
+  font-size: 1.75rem;
 }
 
-[data-contrast="high"] .cardCta {
+.browse {
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  width: 100%;
+}
+
+.browseLabel {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+
+.browseLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.browseLink {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-full);
   color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
