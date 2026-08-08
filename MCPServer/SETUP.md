@@ -1,247 +1,214 @@
-# AlHammadi — setup, from nothing to a working voice agent
+# Setup
 
-Written for someone who has not done this before. Follow it top to bottom and it works.
-Roughly 15 minutes. Every step says what you should see, so you know it worked before
-moving on.
+Two ways to run this. Pick one, follow that section only.
 
-You need a Mac or Linux machine, an ElevenLabs account, and a terminal.
+## Which one?
 
----
+| | **A — Cloudflare** | **B — Local + tunnel** |
+|---|---|---|
+| Speed from ElevenLabs | **1.4s** avg | 4.0s avg |
+| Setup | ~5 min | ~15 min |
+| Laptop must stay on | No | **Yes** |
+| URL changes | Never | **Every restart** |
+| Data | Snapshot, refreshed on deploy | Live, re-read every boot |
+| Needs | Cloudflare account (free) | Nothing |
 
-## Step 1 — Install the two things you need
+**Demoing? Use A.** It's nearly 3× faster and the URL never moves.
 
-**Node.js** (runs the server). Check whether you already have it:
-
-```bash
-node --version
-```
-
-If that prints `v20` or higher, skip ahead. If it says "command not found", install from
-<https://nodejs.org> — take the LTS version — then close and reopen your terminal.
-
-**cloudflared** (puts your server on the public internet so ElevenLabs can reach it):
-
-```bash
-brew install cloudflared          # macOS
-```
-
-Not on macOS? See <https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/>
-
-Check it worked:
-
-```bash
-cloudflared --version
-```
+**Changing tool code? Use B.** Restart and test instantly, no deploy step.
 
 ---
 
-## Step 2 — Get the server running on your machine
+# Option A — Cloudflare Worker
 
-From the repo root:
+Runs at Cloudflare's edge. No laptop, no tunnel, no rotating URL.
+
+### 1. Install and log in
 
 ```bash
 cd MCPServer
 npm install
+npx wrangler login
+```
+
+A browser opens. Authorise it.
+
+### 2. Deploy
+
+```bash
+npm run deploy:worker
+```
+
+You'll get a URL like `https://alhammadi-mcp.<your-subdomain>.workers.dev`.
+
+> First deploy only: if it says you need a `workers.dev` subdomain, open the link it
+> prints, pick any name, then run the command again. Allow ~30 seconds after that for the
+> certificate — until then you'll see TLS errors, which are expected and pass.
+
+### 3. Check it
+
+```bash
+curl https://<your-url>/health
+npm run smoke -- https://<your-url>/mcp
+```
+
+Expect `13 passed, 0 failed`.
+
+Now go to **Connecting ElevenLabs** below.
+
+### The one limitation
+
+**The catalogue is baked into the Worker at deploy time, not fetched live.**
+
+data.dubai's firewall rejects datacenter IPs — verified against the JSON API, not just the
+web pages — so a Worker can never fetch it. It doesn't need to: the catalogue was always
+loaded once at startup and answered from memory. On Cloudflare it simply ships inside the
+bundle (137 KB gzipped).
+
+In practice that means **refreshing the data is a deploy**:
+
+```bash
+npm start              # pulls the live catalogue, writes the snapshot, then Ctrl+C
+npm run deploy:worker  # bundles the new snapshot and ships it
+```
+
+The catalogue changes rarely, so this is a weekly job at most.
+
+---
+
+# Option B — Local + tunnel
+
+Runs on your machine. ElevenLabs reaches it through a Cloudflare tunnel.
+
+### 1. Install
+
+```bash
+cd MCPServer
+npm install
+brew install cloudflared     # macOS
+```
+
+### 2. Start the server — leave this window open
+
+```bash
 npm start
 ```
 
-Wait about 10 seconds. You should see something like:
+Wait for:
 
 ```
-[boot] hydrating catalogue from data.dubai …
-[boot] 598 datasets, 76 entities, 9 indicators, 10 services, 20 tools (10 voice) — via live in 3390ms
-[ready] MCP on http://localhost:8787/mcp  ·  health http://localhost:8787/health
+[boot] 598 datasets, 76 entities, 9 indicators, 10 services, 20 tools (10 voice)
+[ready] MCP on http://localhost:8787/mcp
 ```
 
-Once you see `[ready]`, it's working. **Leave this terminal window open** — closing it
-stops the server.
+> Boot takes anywhere from 3 to 90 seconds — data.dubai is slow and inconsistent. Over two
+> minutes, `Ctrl+C` and retry.
 
-> Boot time varies a lot, because data.dubai is slow and inconsistent. Anywhere from 3
-> to 90 seconds is normal. If it takes longer than two minutes, press `Ctrl+C` and run
-> `npm start` again.
+### 3. Start the tunnel — second window, leave it open too
 
-Open a **second terminal window** for everything from here on.
+```bash
+cloudflared tunnel --region us --url http://localhost:8787
+```
+
+Copy the `https://….trycloudflare.com` address it prints.
+
+> `--region us` matters: without it the tunnel may exit via Singapore while ElevenLabs runs
+> in the US, which measurably slows every call.
+>
+> Wait ~30 seconds before using the URL. Straight after startup it returns an error page
+> that looks like a real failure but isn't.
+
+### 4. Connect it
+
+```bash
+node scripts/reconnect.js https://<your-tunnel-url>
+```
+
+This health-checks the server, then repoints the agent. **Re-run it every time the tunnel
+restarts** — the URL is different each time.
+
+### Before you present
+
+- **Turn off laptop sleep.** Sleep kills the tunnel.
+- Start both windows early and leave them alone.
 
 ---
 
-## Step 3 — Check it's actually working
+# Connecting ElevenLabs
 
-In your second terminal:
+Same for both options.
 
-```bash
-cd MCPServer
-npm run smoke
-```
+### 1. Get your credentials
 
-You want to see `13 passed, 0 failed` at the bottom. If anything fails, jump to
-[Troubleshooting](#troubleshooting).
-
----
-
-## Step 4 — Put it on the internet
-
-ElevenLabs runs in the cloud, so it cannot reach `localhost` on your laptop. This gives
-your local server a public web address.
-
-In your **second** terminal:
+1. Sign in at [elevenlabs.io](https://elevenlabs.io)
+2. Profile (bottom left) → **API Keys** → create one. Starts with `sk_`.
+3. **Agents** → create an agent → copy its ID from the address bar. Starts with `agent_`.
 
 ```bash
-cloudflared tunnel --url http://localhost:8787
-```
-
-Among the output you'll see a box containing an address like:
-
-```
-https://motivation-scanner-only-registered.trycloudflare.com
-```
-
-**Copy that address.** Leave this terminal open too — closing it kills the connection.
-
-> The address is random and **changes every time you restart the tunnel.** That's normal.
-> Step 6 shows how to update it when it changes.
-
-Give it about 30 seconds before using it. Immediately after startup it isn't reachable
-yet, and it returns an error page that looks like a real failure but isn't.
-
----
-
-## Step 5 — Get your ElevenLabs key and create an agent
-
-1. Sign in at <https://elevenlabs.io>
-2. Click your profile (bottom left) → **API Keys** → create one → copy it.
-   It starts with `sk_`.
-3. Go to **Agents** and create a new agent. Give it any name.
-4. Open the agent and copy its ID from the address bar — it starts with `agent_`.
-
-Now, in a **third** terminal:
-
-```bash
-cd MCPServer
 cp .env.example .env
 ```
 
-Open `.env` in any text editor and paste your two values in:
+Put both values in `.env`. It's git-ignored — never paste a key into chat or a commit.
 
-```
-ELEVENLABS_API_KEY=sk_your_actual_key_here
-AGENT_ID=agent_your_actual_id_here
-```
-
-Save and close.
-
-> `.env` holds a password, effectively. It is deliberately excluded from git — never
-> paste your key into a chat, a commit, or a screenshot.
-
----
-
-## Step 6 — Connect the server to your agent
-
-One command does the whole thing. Use the address you copied in step 4:
+### 2. Point the agent at your server
 
 ```bash
-node scripts/reconnect.js https://your-address.trycloudflare.com
+node scripts/reconnect.js https://<your-url>
 ```
 
-You should see:
+Works for either option. It prints a link to talk to your agent.
 
-```
-✓ server healthy — 598 datasets, 20 tools
-✓ detached old integration from agent
-✓ created integration abc123
-✓ agent re-attached
-✓ ElevenLabs can see 10 tools
+### 3. Give the agent its prompt
 
-Ready. Talk to the agent at:
-  https://elevenlabs.io/app/talk-to?agent_id=agent_...
-```
-
-That last line is your agent. **Open it and start talking.**
-
-**Run this same command any time the tunnel address changes** — it handles everything:
-checks the server is healthy first, unhooks the old address, registers the new one, and
-reattaches it. Takes about 20 seconds.
-
----
-
-## Step 7 — Give the agent its instructions
-
-A fresh agent has no personality and no idea when to use the tools. Open
-[`agent-prompt.md`](agent-prompt.md) in this folder, copy the system prompt, and paste it
-into your agent's **System Prompt** field in the ElevenLabs dashboard.
+Copy the system prompt from [`agent-prompt.md`](agent-prompt.md) into the agent's **System
+Prompt** field.
 
 Two settings matter more than they look:
 
-- **LLM** — use a strong model (`claude-sonnet-5` is what this was tested against).
-  Weaker ones don't reliably call tools, and an agent that doesn't call tools makes the
-  answer up instead of admitting it doesn't know.
-- **Temperature** — keep it low (0.1–0.4). This is government data; you do not want
-  creative.
+- **LLM** — use a strong model (`claude-sonnet-5` is what this was tested against). Weaker
+  ones don't reliably call tools, and an agent that doesn't call tools invents the answer.
+- **Temperature** — 0.1 to 0.4. Government data. Not creative.
 
-`agent-prompt.md` also explains *why* each rule is there — several exist because of
-specific ways these tools behave, so read it before rewriting anything.
+### 4. Prove it works
 
----
+Ask: **"How many people live in Dubai?"**
 
-## Checking it really works
+A correct answer says roughly **4.74 million** and credits the Dubai Data and Statistics
+Establishment.
 
-Ask it: **"How many people live in Dubai?"**
+Then check the server is really being called:
 
-A correct answer mentions roughly **4.74 million** and credits the Dubai Data and
-Statistics Establishment.
+- **Option A:** `npx wrangler tail` in another window — you'll see the request
+- **Option B:** the server window shows `[req] POST /mcp/voice ua="ElevenLabs/1.0"`
 
-Now look at the terminal running the server. You should see a line like:
-
-```
-[req] POST /mcp/voice ua="ElevenLabs/1.0"
-```
-
-**That line is the proof.** It means the agent really called your server. If you get a
-plausible answer but *no* such line appears, the agent is making the answer up — go to
-Troubleshooting.
-
-Other things worth trying:
-
-- "I use a wheelchair and I'm moving to Dubai. What help can I get getting around?"
-- "What will my electricity bill be if I use 3000 units a month?"
-- "What data does Dubai publish about real estate?"
+**If you get a plausible answer but no request appears, the agent is making it up.** See
+below.
 
 ---
 
-## Troubleshooting
+# Troubleshooting
 
-**The agent answers but the server shows no `[req]` line.**
-It's inventing answers. Either the tools aren't attached (re-run step 6 and check it says
-"ElevenLabs can see 10 tools"), or MCP is switched off for your workspace. In ElevenLabs
-go to **Integrations** and enable custom MCP servers — it's off by default, and when it's
-off the agent silently ignores your tools rather than showing an error.
+**Answers arrive but nothing hits the server.**
+The agent is inventing them. Either the tools aren't attached — re-run `reconnect.js` and
+check it says "ElevenLabs can see 10 tools" — or MCP is off for your workspace. In
+ElevenLabs, **Integrations → enable custom MCP servers**. It's off by default and fails
+silently.
 
-**"Cannot find module" when starting.**
-You skipped `npm install`, or you're in the wrong folder. You need to be inside
-`MCPServer`.
+**Answers take 20–30 seconds.**
+You're on Option B with a tunnel exiting far from ElevenLabs. Restart with `--region us`,
+or switch to Option A.
 
-**The tunnel address shows a Cloudflare error page.**
-Wait 30 seconds after starting the tunnel and try again. It isn't reachable immediately.
+**`Cannot find module`.**
+You skipped `npm install`, or you're not in `MCPServer`.
 
-**`reconnect.js` says "server healthy" check failed.**
-The server in terminal one has stopped, or the tunnel in terminal two has. Both need to
-be running.
+**Tunnel URL shows a Cloudflare error page.**
+Wait 30 seconds after starting the tunnel.
 
-**Everything worked, now it doesn't.**
-Almost always the tunnel dropped — laptop sleep is the usual cause. Restart it (step 4)
-and re-run step 6 with the new address. **Turn off sleep before any demo.**
+**`reconnect.js` says the health check failed.**
+The server or the tunnel has stopped. Both windows need to stay open.
 
-**`npm run smoke` fails on the search tests.**
-The server can't reach data.dubai. Check your internet, then restart the server.
+**It worked, now it doesn't.**
+The tunnel dropped — usually laptop sleep. Restart it and re-run `reconnect.js`.
 
----
-
-## Demo-day checklist
-
-1. Start the server, leave the terminal open.
-2. Start the tunnel, leave that terminal open.
-3. `node scripts/reconnect.js <address>`
-4. `npm run smoke` — expect 13 passed.
-5. Ask it one real question and watch for the `[req]` line.
-6. **Disable laptop sleep.**
-
-If it breaks between rehearsal and demo, steps 2 and 3 fix it in under a minute.
+**Smoke tests fail on search.**
+Option B can't reach data.dubai. Check your connection and restart.

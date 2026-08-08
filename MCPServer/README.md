@@ -3,8 +3,18 @@
 Voice-facing MCP server over Dubai's official open data, plus the practical
 living-in-Dubai information a caller actually rings up about.
 
-**New here? Go straight to [SETUP.md](SETUP.md)** — it takes you from nothing to a working
-voice agent in about 15 minutes.
+**New here? Go straight to [SETUP.md](SETUP.md).** It offers two ways to run this — pick
+one and follow that section only.
+
+| | **Cloudflare Worker** | **Local + tunnel** |
+|---|---|---|
+| Speed from ElevenLabs | **1.4s** avg | 4.0s avg |
+| Laptop stays on | No | Yes |
+| URL changes | Never | Every restart |
+| Data | Snapshot, refreshed on deploy | Live, re-read every boot |
+
+**Demoing? Use the Worker.** Nearly 3× faster and the URL never moves.
+**Changing tool code? Run it locally.** No deploy step between edit and test.
 
 ## What it can answer
 
@@ -26,6 +36,23 @@ Real exchanges, verified end to end:
 > **"What will my electricity bill be at 2500 units a month?"**
 > "Roughly 750 dirhams total — that's DEWA's residential rate, and it climbs a bit more
 > per unit the higher your usage goes."
+
+## Why there are two runtimes
+
+Tunnelling to a laptop put **2–3 seconds of round trip on every MCP request**, for work the
+server does in 1.5 milliseconds. A spoken turn needs several requests, which is where 20–30
+second answers came from. Measured from ElevenLabs, enumerating tools took **3.98s average
+via the tunnel and 1.42s at the edge** — and the worst case halved.
+
+The Worker can't fetch data.dubai: its firewall rejects datacenter IPs, verified against
+the JSON API and not just the web pages. It doesn't need to. The catalogue was always
+loaded once at boot and answered from memory, so the Worker ships it inside the bundle
+(137 KB gzipped) and touches the network zero times per request.
+
+Tool definitions are shared by both runtimes via `buildTools()` in `src/tools.js`. The Node
+server registers them with the MCP SDK; the Worker speaks JSON-RPC directly, because the
+SDK's transports are built around node's http objects. **One source of truth** — two
+servers with drifting tool behaviour would be worse than either alone.
 
 ## Endpoints
 
@@ -186,7 +213,17 @@ MCPServer/
   scripts/
     smoke.js       13 assertions over the real MCP protocol
     reconnect.js   re-point the agent at a new tunnel URL
+  worker/
+    src/index.js   the same tools as a Cloudflare Worker (JSON-RPC, no SDK)
+    src/data.js    GENERATED — the catalogue baked into the bundle
+    wrangler.toml
+  scripts/
+    build-worker-data.js  regenerates worker/src/data.js from the snapshot
   data/            captured figures (catalogue snapshot is generated, not committed)
   agent-prompt.md  tested prompt + why each rule exists
   SETUP.md         start here
 ```
+
+`src/*-core.js` holds everything both runtimes share — search, ranking, formatting, the
+tool definitions. `src/catalogue.js`, `indicators.js` and `living.js` add the parts that
+need a filesystem or a network, and are used only by the Node server.
