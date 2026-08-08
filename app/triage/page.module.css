@@ -1,0 +1,115 @@
+.wrap {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.internalTag {
+  display: inline-block;
+  margin: 0 0 0.5em;
+  padding: 0.3em 0.7em;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.summary {
+  color: var(--ink-soft);
+  max-width: none;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.table thead th {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 2px solid var(--line-strong);
+}
+
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+.personaCell {
+  font-weight: 400;
+  min-width: 12rem;
+}
+
+.personaName {
+  display: block;
+  font-weight: 700;
+}
+
+.personaScenario {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  margin-top: 0.2em;
+}
+
+.statusChip {
+  display: inline-block;
+  padding: 0.25em 0.7em;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 2px solid transparent;
+}
+
+.statusChip[data-status="pass"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.statusChip[data-status="fail"] {
+  background: var(--error-soft);
+  color: var(--error);
+  border-color: var(--error);
+}
+
+[data-contrast="high"] .statusChip[data-status="pass"],
+[data-contrast="high"] .statusChip[data-status="fail"] {
+  color: var(--ink);
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+.transcriptCell {
+  min-width: 20rem;
+  color: var(--ink-soft);
+}
+
+.muted {
+  color: var(--ink-soft);
+}

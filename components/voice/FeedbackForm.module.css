@@ -1,0 +1,54 @@
+.card {
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+  margin: 1.5rem 0 0;
+  max-width: 38rem;
+}
+
+.card h3 {
+  margin: 0 0 0.4em;
+}
+
+.card p {
+  color: var(--ink-soft);
+}
+
+.label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.4em;
+}
+
+.textarea {
+  width: 100%;
+  font: inherit;
+  font-family: var(--font-body);
+  padding: 0.75rem;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.submit {
+  margin-top: 0.9rem;
+  min-height: 56px;
+  padding: 0 1.5rem;
+  background: var(--amber);
+  color: #1a1206;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+[data-contrast="high"] .submit {
+  background: var(--ink);
+  color: var(--paper);
+}

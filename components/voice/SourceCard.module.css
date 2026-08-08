@@ -1,0 +1,36 @@
+.card {
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--teal-soft);
+  padding: 1rem 1.1rem;
+  margin: 1rem 0 0;
+  max-width: 38rem;
+}
+
+[data-contrast="high"] .card {
+  background: var(--surface);
+}
+
+.eyebrow {
+  margin: 0 0 0.3em;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.publisher {
+  margin: 0 0 0.4em;
+  font-weight: 700;
+  max-width: none;
+}
+
+.meta {
+  margin: 0.15em 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  max-width: none;
+  word-break: break-word;
+}

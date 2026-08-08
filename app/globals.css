@@ -1,0 +1,250 @@
+:root {
+  color-scheme: light;
+
+  --font-body: var(--font-atkinson), system-ui, sans-serif;
+  --font-mono: var(--font-mono-data), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --text-scale: 1;
+
+  /* Light palette: deep teal ink on a pale sage paper, warm brass accent. */
+  --ink: #14302c;
+  --ink-soft: #3d5650;
+  --paper: #f0f4f1;
+  --surface: #ffffff;
+  --line: #d7ddd6;
+  --line-strong: #b7c1b8;
+  --teal: #1f6f6b;
+  --teal-soft: #e4efee;
+  --amber: #b9791f;
+  --amber-strong: #8f5c14;
+  --amber-soft: #f7ecd9;
+  --error: #a03e29;
+  --error-soft: #f8e6e1;
+  --good: #2e7d5b;
+  --good-soft: #e4f1ea;
+  --focus-ring: #14302c;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-card: 0 1px 2px rgba(20, 48, 44, 0.06), 0 8px 24px rgba(20, 48, 44, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ink: #e9f0ec;
+    --ink-soft: #aebdb7;
+    --paper: #0f1e1b;
+    --surface: #162925;
+    --line: #274039;
+    --line-strong: #375750;
+    --teal: #7fd1c8;
+    --teal-soft: #16332f;
+    --amber: #e6ac4c;
+    --amber-strong: #f2c477;
+    --amber-soft: #2e2413;
+    --error: #e2917c;
+    --error-soft: #35201b;
+    --good: #7fcba7;
+    --good-soft: #16322a;
+    --focus-ring: #e9f0ec;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ink: #14302c;
+  --ink-soft: #3d5650;
+  --paper: #f0f4f1;
+  --surface: #ffffff;
+  --line: #d7ddd6;
+  --line-strong: #b7c1b8;
+  --teal: #1f6f6b;
+  --teal-soft: #e4efee;
+  --amber: #b9791f;
+  --amber-strong: #8f5c14;
+  --amber-soft: #f7ecd9;
+  --error: #a03e29;
+  --error-soft: #f8e6e1;
+  --good: #2e7d5b;
+  --good-soft: #e4f1ea;
+  --focus-ring: #14302c;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e9f0ec;
+  --ink-soft: #aebdb7;
+  --paper: #0f1e1b;
+  --surface: #162925;
+  --line: #274039;
+  --line-strong: #375750;
+  --teal: #7fd1c8;
+  --teal-soft: #16332f;
+  --amber: #e6ac4c;
+  --amber-strong: #f2c477;
+  --amber-soft: #2e2413;
+  --error: #e2917c;
+  --error-soft: #35201b;
+  --good: #7fcba7;
+  --good-soft: #16322a;
+  --focus-ring: #e9f0ec;
+}
+
+/* High contrast forces pure black-on-white and thickens structural lines,
+   regardless of light/dark preference — placed last so it wins the cascade. */
+:root[data-contrast="high"] {
+  color-scheme: light;
+  --ink: #000000;
+  --ink-soft: #000000;
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --line: #000000;
+  --line-strong: #000000;
+  --teal: #000000;
+  --teal-soft: #ffffff;
+  --amber: #000000;
+  --amber-strong: #000000;
+  --amber-soft: #ffffff;
+  --error: #000000;
+  --error-soft: #ffffff;
+  --good: #000000;
+  --good-soft: #ffffff;
+  --focus-ring: #000000;
+  --shadow-card: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: calc(20px * var(--text-scale));
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  line-height: 1.2;
+  text-wrap: balance;
+  margin: 0 0 0.6em;
+  color: var(--ink);
+}
+
+h1 {
+  font-size: 2rem;
+}
+h2 {
+  font-size: 1.5rem;
+}
+h3 {
+  font-size: 1.2rem;
+}
+
+p {
+  margin: 0 0 1em;
+  max-width: 38rem;
+}
+
+a {
+  color: var(--teal);
+}
+
+a:not([class]) {
+  text-decoration-thickness: from-font;
+}
+
+[data-contrast="high"] a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+ul,
+ol,
+dl {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+  max-width: 38rem;
+}
+
+dt {
+  font-weight: 700;
+  margin-top: 0.6em;
+}
+
+dd {
+  margin: 0.15em 0 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Visible on every interactive element, survives high-contrast mode. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 4px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.75em 1.25em;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "slug": "determination-parking-permit",
+  "name": "People of Determination Parking Permit",
+  "publisher": "Roads and Transport Authority (placeholder)",
+  "summary": "This permit lets you park in designated accessible bays and, in some emirates, in metered bays without charge. It's issued per person, not per vehicle, so it travels with you regardless of who is driving.",
+  "whoQualifies": [
+    "Residents with a registered determination (disability) assessment affecting mobility",
+    "A parent or guardian driving a person of determination, when the permit-holder is a passenger"
+  ],
+  "documentsRequired": [
+    "Emirates ID",
+    "Determination (disability) assessment letter",
+    "Valid UAE driving licence, if the applicant is the driver",
+    "Vehicle registration (Mulkiya), if requesting a vehicle sticker"
+  ],
+  "fees": [
+    { "item": "New permit", "amount": "No charge (placeholder)" },
+    { "item": "Replacement permit", "amount": "AED 20 (placeholder)" }
+  ],
+  "processingTime": "3 working days from a complete application (placeholder)",
+  "howToApply": [
+    "Apply online or at an RTA customer happiness centre",
+    "Upload or present the determination assessment letter",
+    "Choose a hanging permit, a windscreen sticker, or both",
+    "Collect the permit or have it posted to your registered address"
+  ],
+  "sourceUrl": "https://example.gov.ae/services/determination-parking-permit",
+  "lastScrapedAt": "2026-07-22",
+  "exampleQuestions": [
+    "Do I qualify for the parking permit?",
+    "What documents do I need to apply?",
+    "Does the permit cost anything?",
+    "How long does approval take?"
+  ],
+  "fixture": true
+}
