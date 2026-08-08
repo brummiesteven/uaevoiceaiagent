@@ -71,13 +71,23 @@ Tools return in <1.5s with small payloads. A slow tool stalls the agent mid-sent
 
 | Time | Task |
 |---|---|
-| 0:15–1:15 | Service page from A's JSON (Claude Code — this is the fastest-moving piece) |
-| 1:15–1:45 | Embed the ElevenLabs widget. Post-call feedback form → E's `/api/feedback` |
-| 1:45–2:15 | `/triage` — flagged calls, transcripts, linked Linear issues |
-| 2:15–3:00 | **Accessibility pass.** Keyboard nav, screen-reader labels, AA contrast, no timeouts, visible focus states, large tap targets |
+| 0:15–0:20 | **Decide: `@elevenlabs/react` SDK, not the `<elevenlabs-convai>` embed.** The embed is a black box with no message events — no live transcript, no citation chips, no text status. Costs ~30 min, buys the whole accessibility argument. Decide now, not at 1:30 when the embed is already wired |
+| 0:20–1:15 | `/` and `/services/[slug]` from A's JSON. Single column, sequential, 18px+ body, 48px+ targets, semantic headings, no modals, no timeouts |
+| 1:15–2:00 | Call widget via the SDK. **Live transcript** — `aria-live="polite"`, auto-scroll with a "jump to latest" escape hatch, text status (connecting · listening · answering), citation chip inline next to the claim |
+| 2:00–2:30 | Post-call state: transcript persists, plain-language summary, feedback form → E's `/api/feedback` |
+| 2:30–3:00 | `/triage` evidence board — one table, expandable rows: persona, pass/fail, call count, transcript, Linear issue, Devin PR |
 
-Given the people-of-determination framing, the a11y pass is the differentiator, not polish.
-It is scheduled last because it is a pass over finished markup — but it does not get cut.
+**Accessibility is not a pass at the end — it is how D builds from minute fifteen.**
+Semantic HTML written correctly the first time costs nothing; retrofitting it at 2:15 costs
+an hour that does not exist. This is the differentiator given the people-of-determination
+framing, and it is the one thing on D's list that never gets cut.
+
+Do not build: an accessibility overlay widget (opposed by actual screen-reader users and by
+disability advocacy groups — it will be marked down by anyone on the panel who works in the
+field), a dark-mode toggle, a font-size switcher, a text chat input, or animations.
+
+The live transcript is not decoration. A voice-only interface excludes deaf and
+hard-of-hearing users; rendering speech as text is what makes the dual-modality claim true.
 
 ## E — Loop & Submission
 
@@ -115,12 +125,14 @@ Whatever is not working gets written into TECH-SPEC section 5 as v2. Half-built 
 cost more than omitted ones — the spec is checked against the code.
 
 Demotion order if you are behind:
-1. `/triage` page (D) — describe it instead
-2. Audio personas (C) — text simulations alone still demonstrate the suite
-3. Devin PR *merged* (E) — a scoped plan comment is an honest partial
-4. 5 services → 3 (A)
+1. Citation chips (D) — the footer source link still carries the grounding claim
+2. `/triage` evidence board (D) — screenshot the Linear board instead
+3. Audio personas (C) — text simulations alone still demonstrate the suite
+4. Devin PR *merged* (E) — a scoped plan comment is an honest partial
+5. 5 services → 3 (A)
 
-Never cut: the grounded voice answer with citation, the refusal path, or the a11y pass.
+Never cut: the grounded voice answer with citation, the refusal path, the live transcript,
+or accessibility.
 
 ---
 

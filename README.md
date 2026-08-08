@@ -24,6 +24,30 @@ and ask a plain-language question — and closes the loop when the agent gets it
 
 ---
 
+## What you see
+
+**`/services/[slug]`** is the product — a service page with a voice agent attached, not a
+dashboard. The page and the agent read the same JSON, so the screen shows exactly what the
+agent knows. It moves through three states in place:
+
+- **Idle** — plain-language summary, the call button above the fold, then who qualifies,
+  documents needed, costs and how to apply. Source link and helpline in the footer.
+- **In call** — the transcript renders live beneath the widget, with the agent's status as
+  text and a citation chip next to each grounded claim.
+- **After the call** — the transcript stays on the page, joined by a summary, the sources
+  used, and the feedback form that starts the repair loop.
+
+The live transcript is an accessibility requirement rather than a feature: a voice-only
+interface excludes deaf and hard-of-hearing users, and many people cannot retain spoken
+information on one hearing.
+
+**`/triage`** is an evidence board — one table showing each adversarial persona, whether it
+passed, its transcript, and the Linear issue and Devin PR any failure produced. It is
+unlinked and unauthenticated; all call data in this build is synthetic. See `TECH-SPEC.md`
+for why, and what that requires before real callers use it.
+
+---
+
 ## Requirements
 
 - Node 20+
