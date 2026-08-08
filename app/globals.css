@@ -1,0 +1,280 @@
+/*
+ * Accessibility rules this stylesheet is holding to, because the audience is
+ * people of determination and this is the differentiator, not polish:
+ * body text >= 18px, AA contrast on every pair below, focus always visible,
+ * tap targets >= 44px, nothing conveyed by colour alone, no motion by default.
+ */
+
+:root {
+  --bg: #ffffff;
+  --surface: #f4f6f8;
+  --border: #c3ccd4;
+  --text: #14181c; /* 15.9:1 on --bg */
+  --muted: #4a555f; /* 7.7:1 on --bg */
+  --accent: #00594f; /* 8.2:1 on --bg */
+  --accent-text: #ffffff;
+  --warn-bg: #fff6e0;
+  --warn-border: #8a5b00;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161a;
+    --surface: #1c2228;
+    --border: #45505a;
+    --text: #f2f5f7;
+    --muted: #c2ccd4;
+    --accent: #7fd7c4;
+    --accent-text: #08201c;
+    --warn-bg: #33290f;
+    --warn-border: #f0c66b;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--accent-text);
+  padding: 0.75rem 1rem;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.site-header nav {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.site-header a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  background: var(--surface);
+  margin: 1rem 0;
+}
+
+.card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+}
+
+.notice {
+  border: 2px solid var(--warn-border);
+  background: var(--warn-bg);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  margin: 1.25rem 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+dl.facts {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+}
+
+dl.facts dt {
+  font-weight: 600;
+}
+
+dl.facts dd {
+  margin: 0;
+}
+
+@media (max-width: 32rem) {
+  dl.facts {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  dl.facts dd {
+    margin-bottom: 0.75rem;
+  }
+}
+
+ul.checklist {
+  padding-left: 1.25rem;
+}
+
+ul.checklist li {
+  margin-bottom: 0.5rem;
+}
+
+form.feedback label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+form.feedback .field {
+  margin-bottom: 1.25rem;
+}
+
+form.feedback .hint {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+input[type="text"],
+textarea {
+  width: 100%;
+  min-height: 44px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+}
+
+textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 0.7rem 1.4rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+button[disabled] {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.status {
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.status[data-kind="error"] {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+
+table.triage {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.triage caption {
+  text-align: left;
+  color: var(--muted);
+  padding-bottom: 0.5rem;
+}
+
+table.triage th,
+table.triage td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0.5rem;
+}
+
+details.transcript summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.transcript-turn {
+  margin: 0 0 0.6rem;
+}
+
+.transcript-turn b {
+  display: block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a,
+  button {
+    transition: outline-offset 120ms ease-in-out;
+  }
+}

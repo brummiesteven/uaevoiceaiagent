@@ -46,14 +46,19 @@ Fill `.env.local`:
 
 | Variable | Where to get it |
 |---|---|
-| `CONTEXT_API_KEY` | Context.dev dashboard → API keys |
+| `CONTEXT_DEV_API_KEY` | Context.dev dashboard → API keys |
 | `ELEVENLABS_API_KEY` | ElevenLabs → Profile → API keys |
 | `ELEVENLABS_AGENT_ID` | ElevenLabs → Agents → your agent |
+| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | Same agent id — the browser widget needs it |
 | `ELEVENLABS_WEBHOOK_SECRET` | ElevenLabs → Webhooks (created when you add the post-call webhook) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project settings → API |
 | `LINEAR_API_KEY` | Linear → Settings → API → Personal API keys |
 | `LINEAR_TEAM_ID` | Linear → team settings, or `query { teams { nodes { id name } } }` |
+
+Every variable is optional at boot. A missing one degrades exactly one feature with a
+readable message on the page — with no Supabase the feedback rows are held in the server
+process, with no Linear the row is still written and no issue is opened.
 
 ### One-time platform setup
 
@@ -74,8 +79,13 @@ Fill `.env.local`:
 ```bash
 npm run scrape          # Context.dev → content/services/*.json  (commit the output)
 npm run sync:agent      # pushes agent-config/prompt.md + KB docs to ElevenLabs
+npm run sync:agent -- --dry   # print what would be pushed, change nothing
 npm run dev             # http://localhost:3000
 ```
+
+The committed `content/services/*.json` are hand-written fixtures so the app runs before
+the first scrape. They are not verified extractions — `source.humanVerified` is `false` and
+the service page says so until a person has checked them against the page.
 
 Re-scrape a single service after a government page changes:
 
@@ -109,22 +119,32 @@ makes a merged Devin PR take effect on the live agent without anyone touching a 
 ## Repo layout
 
 ```
+AGENTS.md                      what a coding agent may and may not change
 content/
   schema.ts                    the extraction contract — one shape, three consumers
+  sources.ts                   the government pages to scrape, one per service
+  index.ts                     loads + validates the committed JSON
   services/*.json              Context.dev output (committed)
 agent-config/
   prompt.md                    agent system prompt — Devin edits this
 scripts/
   scrape.ts                    Context.dev crawl + structured extraction
   sync-agent.ts                pushes prompt + KB to the live ElevenLabs agent
-  adversarial/                 the 5 caller personas
+  adversarial/personas.ts      the 5 caller personas and their pass criteria
+  adversarial/run.ts           ElevenLabs simulation tests
+  adversarial/audio.ts         renders 2 personas to audio, mixes noise via ffmpeg
 app/
+  page.tsx                     service index
   services/[slug]/page.tsx     service page + call widget + feedback form
-  triage/page.tsx              flagged calls and their tickets
-  api/mcp/route.ts             MCP server
+  triage/page.tsx              flagged calls, transcripts and their tickets
+  api/mcp/route.ts             MCP server (JSON-RPC over one POST)
   api/feedback/route.ts        feedback → Supabase → Linear → Devin
   api/elevenlabs-webhook/route.ts   attaches transcript to the feedback row
+components/                    call panel + feedback form (client)
+lib/                           env, Supabase, Linear, store, MCP tools
 supabase/schema.sql
+.github/workflows/ci.yml       lint, typecheck, build
+.github/workflows/sync-agent.yml   re-syncs the live agent on merge to main
 ```
 
 ---
