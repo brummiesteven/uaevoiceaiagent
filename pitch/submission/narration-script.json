@@ -1,0 +1,42 @@
+{
+  "voiceId": "OpYgEDvHiCmxNeiCNPr6",
+  "voiceName": "Kate Mercer",
+  "modelId": "eleven_multilingual_v2",
+  "sections": [
+    {
+      "id": "q1",
+      "slide": "q1",
+      "text": "Dubai publishes five hundred and ninety-eight datasets from seventy-six government entities. All of it open, all of it public — and all of it behind a search box, a filter and a download button. For most people that's friction. If you're blind, or navigating with a motor impairment, or you simply find a dense government page hard going, open and reachable are not the same word. AlHammadi is a phone line for that data. It's built for People of Determination, and for anyone who finds it easier to ask than to read. It matters because the city already promised these people access. The data just never arrived in a form they could use."
+    },
+    {
+      "id": "q2a",
+      "slide": "q2",
+      "text": "Here is the agent working. Everything you're about to hear is captured from real conversations — the audio is the agent's own, and every figure comes from a live tool call, not a script."
+    },
+    {
+      "id": "q2b",
+      "slide": "q2-tools",
+      "text": "Behind that, the agent pulls from three places. The catalogue — five hundred and ninety-eight datasets and seventy-six publishers — comes from data dot dubai's open API. But the things a caller actually rings up about aren't in any API at all. Electricity and water tariffs live only on DEWA's rendered page. Entitlements for People of Determination — the free parking permit, the free Metro travel, the toll exemption — live only on the Roads and Transport Authority and Parkin websites. We fetch those through context dot dev, routed through a UAE address, because Dubai's data portal blocks datacentre traffic outright."
+    },
+    {
+      "id": "q3",
+      "slide": "q3",
+      "text": "Our project would fundamentally break without live web data because the answers people need are not in any API. They exist only as rendered web pages — and the portal's firewall rejects datacentre traffic outright, so a server cannot reach them at all without context dot dev routing the request through a UAE address. It works. We pull Dubai's live population counter and DEWA's current tariff straight from the source. It is slow — fifteen to twenty-five seconds, because the page has to be rendered through a residential proxy — so today that fetch runs just ahead of the call rather than inside it. Handling a figure that moves mid-conversation is the next step, and the plumbing for it is already built."
+    },
+    {
+      "id": "q4",
+      "slide": "q4",
+      "text": "The agent decides everything on its own. Nothing orchestrates it. It hears a question, picks which of ten tools to call, chooses the arguments, reads the result and decides whether that answered the question or whether it needs another. Ask about an electricity bill and it works the actual tariff — Dubai's rate is a sliding scale, and treating it as flat overstates the bill by twenty-seven percent. We used ElevenLabs' agent platform end to end: speech to text, the model, text to speech, and the Model Context Protocol integration that connects it to our server. Its personality has one rule above all others: never state a number that didn't come from a tool. Ask it something it doesn't have, and it tells you so rather than guessing."
+    },
+    {
+      "id": "q5",
+      "slide": "q5",
+      "text": "What's novel is the combination. Open government data has been published for a decade — Dubai was the first city in the world to mandate it, back in twenty fifteen. Voice assistants are everywhere. Nobody has joined them for the people most excluded by a screen. And the tools don't answer questions about a data catalogue. They answer questions about living in Dubai — what your bill will be, what you're entitled to, who to call — assembled from four separate government sources that have never been queryable together, by voice, in two languages."
+    },
+    {
+      "id": "q6",
+      "slide": "q6",
+      "text": "The hardest problem was a bug that told us nothing. Multi-word searches returned zero results — no error, valid JSON, just an empty list that looked exactly like no matches. Same URL through curl returned twenty-two. It turned out Node's built-in fetch and the portal disagreed in a way neither reported: requests worked from Node's older HTTPS module and silently failed through fetch. We found it by testing the same URL through three different clients and comparing. Every network call now goes through one function with a comment explaining why it must never be changed back — because the failure is silent, and a voice agent that silently finds nothing sounds exactly like a voice agent that works."
+    }
+  ]
+}

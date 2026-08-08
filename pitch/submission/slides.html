@@ -1,0 +1,102 @@
+<meta charset="utf-8">
+<title>frames</title>
+<style>
+  :root{--g:#081410;--r:#0E211A;--l:#1C362C;--ink:#F0EDE4;--mut:#93A79D;--fai:#64796F;--acc:#4FE3A0;--amb:#E5A857;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--g);color:var(--ink);font-family:var(--sans);overflow:hidden}
+  .f{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:96px 110px}
+  .f.on{display:flex}
+  .eb{font-family:var(--mono);font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:var(--acc);margin:0 0 26px}
+  h1{font-size:74px;line-height:1.03;letter-spacing:-.04em;font-weight:680;margin:0 0 30px;max-width:19ch}
+  h1 em{color:var(--acc);font-style:normal}
+  p.l{font-size:27px;line-height:1.5;color:var(--mut);max-width:56ch;margin:0 0 16px}
+  p.l b{color:var(--ink);font-weight:600}
+  .figs{display:flex;gap:76px;margin-top:34px}
+  .fig b{display:block;font-size:104px;line-height:.9;letter-spacing:-.05em;font-weight:700;color:var(--acc);margin-bottom:12px}
+  .fig.d b{color:var(--ink)}
+  .fig span{font-family:var(--mono);font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+  .rows{display:grid;gap:22px;margin-top:26px}
+  .row{display:grid;grid-template-columns:210px 1fr;gap:34px;border-top:1px solid var(--l);padding-top:20px;align-items:baseline}
+  .row .k{font-family:var(--mono);font-size:17px;color:var(--acc)}
+  .row b{display:block;font-size:25px;font-weight:640;letter-spacing:-.02em;margin-bottom:6px}
+  .row p{margin:0;color:var(--mut);font-size:19px;line-height:1.5;max-width:62ch}
+  .turn{display:grid;grid-template-columns:120px 1fr;gap:30px;margin-bottom:30px}
+  .who{font-family:var(--mono);font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--fai);text-align:right;padding-top:.6em}
+  .said{margin:0;font-size:29px;line-height:1.45;letter-spacing:-.015em}
+  .turn.a .said{color:var(--mut)}
+  .said mark{background:none;color:var(--acc);font-weight:640}
+  .tag{display:inline-block;font-family:var(--mono);font-size:15px;color:var(--acc);border:1px solid var(--acc);
+       border-radius:4px;padding:7px 14px;margin-top:26px}
+  .brand{position:absolute;bottom:52px;left:110px;font-family:var(--mono);font-size:14px;color:var(--fai);letter-spacing:.16em}
+</style>
+
+<div class="f" id="q1">
+  <p class="eb">01 &middot; The problem</p>
+  <h1>Dubai opened its data. <em>You still need a screen to read it.</em></h1>
+  <div class="figs">
+    <div class="fig"><b>598</b><span>datasets</span></div>
+    <div class="fig"><b>76</b><span>entities</span></div>
+    <div class="fig d"><b>0</b><span>that answer<br>a spoken question</span></div>
+  </div>
+  <p class="l" style="margin-top:36px">Built for <b>People of Determination</b> &mdash; and anyone who finds it easier to ask than to read.</p>
+  <div class="brand">ALHAMMADI</div>
+</div>
+
+<div class="f" id="q2">
+  <p class="eb">02 &middot; Live demo</p>
+  <h1>A real call.</h1>
+  <p class="l">Captured from the running agent. The audio is its own, and every figure comes from a live tool call.</p>
+  <div class="brand">ALHAMMADI</div>
+</div>
+
+<div class="f" id="demo">
+  <p class="eb">02 &middot; Live demo &middot; real capture</p>
+  <div class="turn"><span class="who">Caller</span><p class="said">How many people live in Dubai?</p></div>
+  <div class="turn a"><span class="who">Agent</span><p class="said">Dubai&rsquo;s home to about <mark>four and three quarter million</mark> people right now, according to the city&rsquo;s statistics body&hellip;</p></div>
+  <span class="tag">TOOL CALL &nbsp;get_dubai_indicator { indicator: "population" } &rarr; success</span>
+  <div class="brand">ALHAMMADI</div>
+</div>
+
+<div class="f" id="q2-tools">
+  <p class="eb">02 &middot; Where the data comes from</p>
+  <h1>Three sources, <em>one voice.</em></h1>
+  <div class="rows">
+    <div class="row"><span class="k">data.dubai</span><div><b>The catalogue</b><p>598 datasets, 76 publishers, via the open API. Pulled once at boot, answered from memory.</p></div></div>
+    <div class="row"><span class="k">context.dev</span><div><b>What no API exposes</b><p>DEWA tariffs, and People of Determination entitlements from RTA and Parkin &mdash; rendered pages only, fetched through a UAE address.</p></div></div>
+    <div class="row"><span class="k">ElevenLabs</span><div><b>The interface</b><p>Speech in, the decision about what to look up, speech out.</p></div></div>
+  </div>
+  <div class="brand">ALHAMMADI</div>
+</div>
+
+<div class="f" id="q3">
+  <p class="eb">03 &middot; Why live web data</p>
+  <h1>The answers aren&rsquo;t in <em>any API.</em></h1>
+  <p class="l">Tariffs and entitlements exist only as rendered pages &mdash; and Dubai&rsquo;s firewall <b>rejects datacentre traffic outright</b>. Without context.dev routing through a UAE address, a server cannot reach them at all.</p>
+  <p class="l">It works. It&rsquo;s slow &mdash; <b>15 to 25 seconds</b> &mdash; so today it runs just ahead of the call.</p>
+  <div class="brand">ALHAMMADI</div>
+</div>
+
+<div class="f" id="q4">
+  <p class="eb">04 &middot; What the agent does on its own</p>
+  <h1>Nothing orchestrates it.</h1>
+  <p class="l">It hears the question, picks one of <b>10 tools</b>, chooses the arguments, reads the result, and decides whether that answered it.</p>
+  <p class="l">One rule above all others: <b>never state a number that didn&rsquo;t come from a tool.</b> Ask what it doesn&rsquo;t know, and it says so.</p>
+  <div class="brand">ALHAMMADI</div>
+</div>
+
+<div class="f" id="q5">
+  <p class="eb">05 &middot; What&rsquo;s novel</p>
+  <h1>Not a catalogue search. <em>Answers about living here.</em></h1>
+  <p class="l">What your bill will be. What you&rsquo;re entitled to. Who to call.</p>
+  <p class="l">Assembled from <b>four government sources</b> that have never been queryable together &mdash; by voice, in two languages, for the people most excluded by a screen.</p>
+  <div class="brand">ALHAMMADI</div>
+</div>
+
+<div class="f" id="q6">
+  <p class="eb">06 &middot; Hardest problem</p>
+  <h1>A bug that told us <em>nothing.</em></h1>
+  <p class="l">Multi-word searches returned zero results. No error, valid JSON, an empty list that looked exactly like &ldquo;no matches&rdquo;. The same URL through curl returned <b>22</b>.</p>
+  <p class="l">Node&rsquo;s built-in <b>fetch</b> and the portal disagreed, and neither reported it. Found by testing one URL through three clients and comparing.</p>
+  <div class="brand">ALHAMMADI</div>
+</div>
