@@ -33,5 +33,8 @@
   "_pronunciation_dictionary_note": "Populate with UAE service/entity names once A's content/schema.ts and content/services/*.json land — generic ASR will mangle these.",
 
   "mcp_tools": [],
-  "_mcp_tools_note": "Left empty on purpose. Populate once C's MCP server is live with the actual tool names/schemas (expected: find_service, get_required_documents, check_eligibility). Out of scope for this skeleton pass."
+  "_mcp_tools_note": "Left empty on purpose. Populate once C's MCP server is live with the actual tool names/schemas (expected: find_service, get_required_documents, check_eligibility). Out of scope for this skeleton pass.",
+
+  "webhook_tools": [],
+  "_webhook_tools_note": "Separate from mcp_tools on purpose — these don't query the data source and aren't part of the MCP flow. Populate with the file_issue tool (name, webhook URL, payload schema) once D's ticket database + webhook endpoint exists. See prompt.md's 'Filing an issue' section for when the agent should call it."
 }

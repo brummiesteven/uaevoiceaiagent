@@ -54,6 +54,7 @@ type AgentSettings = {
   turn_taking: { interruption_sensitivity: string; silence_end_call_timeout_ms: number };
   pronunciation_dictionary: unknown[];
   mcp_tools: unknown[];
+  webhook_tools: unknown[];
 };
 
 function loadPrompt(): string {
@@ -71,6 +72,16 @@ function loadSettings(): AgentSettings {
  * current ElevenLabs API docs before first real sync, the API surface moves.
  */
 function buildAgentPatch(prompt: string, settings: AgentSettings) {
+  const platformSettings: Record<string, unknown> = {};
+  // MCP tool wiring is intentionally a no-op until settings.mcp_tools is populated —
+  // see ElevenLabsAgent/agent-settings.json's mcp_tools note.
+  if (settings.mcp_tools.length > 0) platformSettings.mcp_servers = settings.mcp_tools;
+  // Webhook tools (e.g. file_issue — the support-loop tool, separate from MCP) are
+  // also intentionally a no-op until D's ticket webhook exists and settings.webhook_tools
+  // is populated. Field name/shape is a placeholder — verify against the ElevenLabs
+  // API's client tool / webhook tool schema before first real sync.
+  if (settings.webhook_tools.length > 0) platformSettings.webhook_tools = settings.webhook_tools;
+
   return {
     conversation_config: {
       agent: {
@@ -91,9 +102,7 @@ function buildAgentPatch(prompt: string, settings: AgentSettings) {
         interruption_sensitivity: settings.turn_taking.interruption_sensitivity,
       },
     },
-    // MCP tool wiring is intentionally a no-op until settings.mcp_tools is populated —
-    // see ElevenLabsAgent/agent-settings.json's mcp_tools note.
-    ...(settings.mcp_tools.length > 0 ? { platform_settings: { mcp_servers: settings.mcp_tools } } : {}),
+    ...(Object.keys(platformSettings).length > 0 ? { platform_settings: platformSettings } : {}),
   };
 }
 
@@ -111,6 +120,9 @@ async function syncAgentConfig() {
 
   if (settings.mcp_tools.length === 0) {
     console.log("mcp_tools is empty — skipping MCP tool wiring (expected until C's server is live).");
+  }
+  if (settings.webhook_tools.length === 0) {
+    console.log("webhook_tools is empty — skipping support-loop tool wiring (expected until D's ticket webhook is live).");
   }
 }
 
