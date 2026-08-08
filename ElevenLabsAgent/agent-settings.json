@@ -44,13 +44,13 @@
   "system_tools": {
     "language_detection": true,
     "_why": "Required for the agent to switch its spoken response language mid-call when the caller switches languages — multi-language mode alone only picks the language at call start. This system tool is NOT on by default even with language.mode = multi.",
-    "_json_placement_confirmed": "Verified via a live PATCH+GET: sending {\"type\": \"system\", \"name\": \"language_detection\"} inside agent.prompt.tools is correct — the API accepts it and mirrors it into agent.prompt.built_in_tools.language_detection in its response."
+    "_json_placement_confirmed": "agent.prompt.built_in_tools.language_detection (inline object) is the correct placement — verified live. The earlier 'tools array' placement only worked while tool_ids was empty: once tool_ids held a real webhook tool id, the API started rejecting PATCHes that set both agent.prompt.tools and agent.prompt.tool_ids together. built_in_tools coexists with tool_ids cleanly."
   },
 
   "_mcp_note": "MCP server registration is intentionally NOT configured here. C's MCP server (MCPServer/) has no stable URL yet (local + cloudflared tunnel, URL changes every restart), and MCPServer/scripts/reconnect.js already owns registering it and attaching it to the agent via mcp_server_ids on every reconnect. sync-agent.ts deliberately never touches that field — see its buildAgentPatch() comment. Run reconnect.js after starting the tunnel; don't add mcp_server_ids here.",
 
   "_pre_tool_speech_note": "Checked while fixing the agent narrating its own tool calls out loud. The auto-filler knobs that could cause that platform-side live on the MCP server resource (GET /v1/convai/mcp-servers/{id}), not on the agent: force_pre_tool_speech=false, pre_tool_speech='auto', tool_call_sound_behavior='auto'. Those were already benign — 'auto' only fills when latency demands it, and it generates from the system prompt, so the prompt rule governs it either way. Root cause was the prompt (see prompt.md 'Never narrate the mechanism'). Deliberately not changed here: that resource is owned by MCPServer/scripts/reconnect.js, which re-registers it on every tunnel restart and would clobber anything sync-agent.ts wrote. If narration ever reappears mid-tool-call specifically, set pre_tool_speech off in reconnect.js, not here.",
 
-  "tool_ids": [],
-  "_tool_ids_note": "Holds the ID of the file_issue webhook tool resource (see prompt.md's 'Filing an issue' section) once D's ticket webhook exists and the tool is registered with ElevenLabs. This is an ID reference, not an inline tool definition."
+  "tool_ids": ["tool_0601kzge91x6etnapep34kjfbc6n"],
+  "_tool_ids_note": "file_issue webhook tool, registered against SupportLoop's live deployment (POST https://uae-voice-support-loop.vercel.app/api/agent/ticket) per D's handover doc. conversation_id is bound to the real system__conversation_id dynamic variable rather than left for the LLM to recall (ElevenLabs rejects setting both 'description' and 'dynamic_variable' on the same body param — pick one; recreate via POST/PATCH https://api.elevenlabs.io/v1/convai/tools if this ever needs to change, the dashboard's Add Tool flow works too)."
 }

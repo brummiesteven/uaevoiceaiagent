@@ -82,10 +82,12 @@ function loadSettings(): AgentSettings {
  * correctly. If this script also PATCHed mcp_server_ids, the two would fight over the
  * same field. Do not add MCP wiring here without removing it from reconnect.js first.
  *
- * language_detection placement CONFIRMED via a live PATCH + GET against a real agent:
- * sending it as an entry inside agent.prompt.tools ({type: "system", name:
- * "language_detection"}) is correct — the API accepts it and mirrors it into
- * agent.prompt.built_in_tools.language_detection in its response.
+ * language_detection placement CORRECTED after tool_ids went from empty to non-empty:
+ * the API rejects a PATCH that sets both agent.prompt.tools and agent.prompt.tool_ids
+ * together ("Cannot specify both tools and tool IDs"). Sending language_detection as an
+ * entry in the `tools` array only worked in earlier testing because tool_ids was still
+ * empty then. Confirmed via live PATCH+GET that agent.prompt.built_in_tools.language_detection
+ * (an inline object, not the `tools` array) coexists cleanly with tool_ids — use that.
  */
 function buildAgentPatch(prompt: string, settings: AgentSettings) {
   const promptConfig: Record<string, unknown> = {
@@ -98,7 +100,7 @@ function buildAgentPatch(prompt: string, settings: AgentSettings) {
   // tool definition. Unrelated to MCP — see the file-level comment above.
   if (settings.tool_ids.length > 0) promptConfig.tool_ids = settings.tool_ids;
   if (settings.system_tools.language_detection) {
-    promptConfig.tools = [{ type: "system", name: "language_detection" }];
+    promptConfig.built_in_tools = { language_detection: { type: "system", name: "language_detection" } };
   }
 
   return {
