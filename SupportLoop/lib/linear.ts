@@ -14,6 +14,26 @@ const LINEAR_API = "https://api.linear.app/graphql";
  */
 export const ESCALATION_LABEL = "needs-engineer";
 
+/**
+ * Whether a Linear issue-update webhook is the moment the escalation label went on.
+ *
+ * Linear sends `updatedFrom` holding only the fields that changed, with their previous
+ * values. So `labelIds` being absent means this update was not about labels at all — a
+ * state change, a comment, a title edit — and an already-escalated issue would otherwise
+ * re-alert on every one of them. That is the difference between an alert worth reading and
+ * a channel someone mutes.
+ */
+export function escalationAdded(
+  labels: { id: string; name: string }[],
+  updatedFrom: { labelIds?: string[] | null } | null | undefined,
+): boolean {
+  const label = labels.find((l) => l.name.toLowerCase() === ESCALATION_LABEL);
+  if (!label) return false;
+  const previous = updatedFrom?.labelIds;
+  if (!previous) return false;
+  return !previous.includes(label.id);
+}
+
 export type LinearIssue = {
   id: string;
   identifier: string;
@@ -28,6 +48,14 @@ export type LinearIssue = {
   /** Whether the @devin comment that triggers a session was posted. */
   devinMentioned: boolean;
 };
+
+/**
+ * Whether anything is actually going to work this ticket. Assignment and mention are two
+ * routes to the same outcome and either one is enough; neither is the same as "the issue
+ * exists", which is the assumption that makes a broken loop look green.
+ */
+export const devinReached = (issue: Pick<LinearIssue, "devinAssigned" | "devinMentioned">) =>
+  issue.devinAssigned || issue.devinMentioned;
 
 async function linearRequest<T>(query: string, variables: Record<string, unknown>): Promise<T> {
   const response = await fetch(LINEAR_API, {

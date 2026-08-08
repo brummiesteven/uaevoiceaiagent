@@ -1,5 +1,6 @@
 import { linearConfigured } from "./env";
-import { createIssueForFeedback, LinearIssue } from "./linear";
+import { createIssueForFeedback, devinReached, LinearIssue } from "./linear";
+import { notifySlack } from "./slack";
 import { insertFeedback, insertTicket } from "./store";
 import { FeedbackSource } from "./types";
 
@@ -53,6 +54,21 @@ export async function fileReport(input: ReportInput): Promise<ReportResult> {
       linearUrl: issue.url,
       assignee: issue.assignee,
     });
+    // Only when the handoff failed. A ticket Devin picked up is working as designed and
+    // does not interrupt anyone; see lib/slack.ts for why that restraint is the point.
+    if (!devinReached(issue)) {
+      await notifySlack({
+        text: `Devin did not pick up ${issue.identifier} — nothing is working on it`,
+        detail: input.note.slice(0, 300),
+        fields: [
+          { label: "Ticket", value: issue.identifier },
+          { label: "Came in via", value: input.source === "voice" ? "the agent, mid-call" : "web form" },
+          { label: "Why you", value: "Devin was not reached, so this ticket has no first responder" },
+        ],
+        link: { text: "Open in Linear", url: issue.url },
+      });
+    }
+
     return {
       feedbackId: feedback.id,
       ticket: { identifier: issue.identifier, url: issue.url, assignee: issue.assignee },
@@ -73,7 +89,7 @@ export async function fileReport(input: ReportInput): Promise<ReportResult> {
  * Says exactly how far the Devin handoff got, because "a ticket exists" and "something is
  * going to work on it" are different claims and only the second one closes the loop.
  */
-function devinWarning(issue: LinearIssue): string | null {
+export function devinWarning(issue: LinearIssue): string | null {
   if (issue.devinAssigned) return null;
   if (issue.devinMentioned) {
     return "Linear would not assign this to the Devin app user, so Devin was mentioned in a comment instead.";

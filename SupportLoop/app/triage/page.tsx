@@ -5,6 +5,7 @@ import {
   isClosed,
   LinearIssueState,
 } from "@/lib/linear";
+import { slackConfigured } from "@/lib/slack";
 import { listTriage, markResolved, storeBackend } from "@/lib/store";
 import { Ticket as TicketType, TranscriptTurn, TriageRow } from "@/lib/types";
 
@@ -108,6 +109,14 @@ export default async function TriagePage() {
         <p className="notice">
           Devin is not in this Linear workspace, so no ticket below has been handed to it.
           Install the Devin integration in Linear, or set <code>LINEAR_DEVIN_USER_ID</code>.
+        </p>
+      )}
+
+      {/* An escalation that only shows on a page nobody has open has not reached anyone. */}
+      {!slackConfigured() && (
+        <p className="notice">
+          Slack is not configured, so escalations show here but nobody is notified. Set{" "}
+          <code>SLACK_WEBHOOK_URL</code>.
         </p>
       )}
 

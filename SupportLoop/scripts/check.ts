@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
-import { ESCALATION_LABEL, isClosed, issueBody, LinearIssueState } from "../lib/linear";
+import {
+  devinReached,
+  escalationAdded,
+  ESCALATION_LABEL,
+  isClosed,
+  issueBody,
+  LinearIssueState,
+} from "../lib/linear";
 import { CallFeedback } from "../lib/types";
 
 /**
@@ -75,5 +82,37 @@ assert.equal(assigneeStuck({ id: "adarsh-id" }, devinUser.id), false);
 assert.equal(assigneeStuck(null, devinUser.id), false);
 assert.equal(assigneeStuck({ id: devinUser.id }, devinUser.id), true);
 assert.equal(assigneeStuck({ id: "adarsh-id" }, null), false);
+
+// The Slack alert for a dropped ticket hangs off this, and so does the warning shown to
+// whoever reported it. Either route reaching Devin counts; the issue merely existing does not.
+assert.equal(devinReached({ devinAssigned: true, devinMentioned: false }), true);
+assert.equal(devinReached({ devinAssigned: false, devinMentioned: true }), true);
+assert.equal(devinReached({ devinAssigned: false, devinMentioned: false }), false);
+
+// Slack is only allowed to fire when a ticket has stalled on a human. The expensive
+// failure is not a missed alert, it is a channel that pings on every routine update and
+// gets muted — after which the escalation alerts are missed too.
+const label = { id: "label-1", name: ESCALATION_LABEL };
+const other = { id: "label-2", name: "bug" };
+
+// The label just went on: alert.
+assert.equal(escalationAdded([other, label], { labelIds: ["label-2"] }), true);
+assert.equal(escalationAdded([label], { labelIds: [] }), true);
+
+// Already escalated, and this update was about something else — a state change, a comment,
+// Devin renaming the issue. `updatedFrom` carries no labelIds, so it must stay quiet.
+assert.equal(escalationAdded([label], {}), false);
+assert.equal(escalationAdded([label], null), false);
+assert.equal(escalationAdded([label], undefined), false);
+
+// A label change that left the escalation label exactly as it was: still quiet.
+assert.equal(escalationAdded([label, other], { labelIds: ["label-1"] }), false);
+
+// No escalation label at all, however the labels moved around.
+assert.equal(escalationAdded([other], { labelIds: [] }), false);
+assert.equal(escalationAdded([], { labelIds: ["label-1"] }), false);
+
+// Linear lets people rename labels by case, and the alert must not hinge on that.
+assert.equal(escalationAdded([{ id: "label-1", name: "Needs-Engineer" }], { labelIds: [] }), true);
 
 console.log("check.ts: all assertions passed");
