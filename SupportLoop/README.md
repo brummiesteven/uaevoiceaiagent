@@ -130,7 +130,7 @@ https://uae-voice-support-loop.vercel.app
 
 | What | Where |
 |---|---|
-| Agent files a report (B registers this as the `file_issue` webhook tool) | `POST /api/agent/ticket`, header `x-support-secret` |
+| Agent files a report — registered as the agent's `file_issue` tool, verified on a live call | `POST /api/agent/ticket`, header `x-support-secret` |
 | Post-call transcript — the ElevenLabs `post_call_transcription` webhook points here, registered and verifying | `POST /api/elevenlabs-webhook` |
 | Escalation in, Slack out — already registered on the Linear team, Issue events | `POST /api/linear-webhook` |
 | Audit trail for a demo, no Linear account needed | `/triage` |

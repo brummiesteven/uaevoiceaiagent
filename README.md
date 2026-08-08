@@ -131,6 +131,10 @@ inside its latency budget. Devin sits entirely outside the call: by the time it 
 caller has already hung up, so it has no latency budget to blow either. Slack is touched
 only in the one branch where the loop has stalled on a human.
 
+A live Context.dev fetcher does exist (`MCPServer/src/live.js`) and works, but it isn't
+registered as a tool and so isn't drawn in the call lane — the two fetches measured 15.5s
+and 24.4s. That's the lane boundary being enforced, not an omission. See `TECH-SPEC.md` §5.
+
 ## Support loop
 
 A second, separate flow handles a caller who is unhappy with the service or wants to
@@ -166,7 +170,7 @@ pull request that fixed it, without needing an account on our workspace. Slack i
 for the two cases where the loop has stalled on a person: Devin was never reached, or Devin
 escalated. See `SupportLoop/README.md`.
 
-### Live
+### Live, and closed end to end
 
 ```
 https://uae-voice-support-loop.vercel.app
@@ -174,20 +178,20 @@ https://uae-voice-support-loop.vercel.app
 
 | What | Where | State |
 |---|---|---|
-| Agent files a report | `POST /api/agent/ticket`, header `x-support-secret` | Live. 401 unauthenticated, 200 authenticated, verified against production |
+| Agent files a report | `POST /api/agent/ticket`, header `x-support-secret` | Live. Registered as the agent's `file_issue` tool; 401 unauthenticated, 200 authenticated, verified against production |
 | Escalation in, Slack out | `POST /api/linear-webhook` | Live. Registered on the Linear team for Issue events; real deliveries verified, forged signatures rejected |
 | Post-call transcript | `POST /api/elevenlabs-webhook` | Live. Signed deliveries accepted, forged signatures rejected with `401 Signature mismatch` |
 | Audit trail, no Linear account needed | `/triage` | Live |
 
-Everything from "report filed" through "Slack pings a human" runs in production, on real
-Linear and real Slack, not a mock. The post-call transcription webhook is registered
-workspace-wide in ElevenLabs and its signing secret is set, so transcripts verify and
-attach.
+**A caller can now do this by voice.** `file_issue` is registered as a webhook tool in
+`ElevenLabsAgent/agent-settings.json`'s `tool_ids`, with `conversation_id` bound to
+ElevenLabs' `system__conversation_id` dynamic variable rather than left for the LLM to
+recall — a live test call produced a real ticket (`PER-21`) with the agent reading the
+reference back spelled out, visible on `/triage` within seconds.
 
-**One gap remains:** `ElevenLabsAgent/agent-settings.json`'s `tool_ids` is still empty, so
-a caller on a live call has no route to the endpoint. Today the ways in are the `/report`
-form and a direct POST — Devin has picked up and replied to a real ticket filed that way.
-Registering the `file_issue` webhook tool closes it. See `TECH-SPEC.md` §5.
+Everything behind that runs in production on real Linear and real Slack, not a mock. The
+post-call transcription webhook is registered workspace-wide in ElevenLabs and its signing
+secret is set, so transcripts verify and attach to the ticket they belong to.
 
 ## Ownership
 
@@ -301,11 +305,9 @@ SupportLoop/              D — the Next.js app behind the support flow
 
 - The frontend's voice call is simulated by default (see How it works above) — it needs
   `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` set to actually talk to the live agent.
-- The support loop is deployed and verified in production, but isn't attached to the live
-  agent yet (`tool_ids` empty) — a caller can't file a ticket through a real call today.
-- Transcripts only attach to a report when the agent sends `conversation_id` with the
-  ticket — without it the two halves have no join key, and the ticket arrives with an empty
-  transcript panel.
+- A ticket's transcript arrives minutes after the ticket does — ElevenLabs only posts it
+  once the call finishes processing. Opening `/triage` straight after a call shows the
+  report with an empty transcript panel; that's the expected order, not a failure.
 - `content/services/*.json` are hand-written placeholders, not a verified scrape — see
   `AGENTS.md` before quoting a value from one as fact.
 - Root `/triage` (persona test results) and `SupportLoop`'s `/triage` (ticket audit trail)

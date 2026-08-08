@@ -1,13 +1,15 @@
 {
-  "name": "alhammadi-mcp-server",
+  "name": "dubai-open-data-mcp",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "AlHammadi \u2014 MCP server over Dubai's open data, statistics and living-in-Dubai information",
+  "description": "MCP server over the Dubai open data catalogue (data.dubai)",
   "scripts": {
     "start": "node src/server.js",
-    "refresh": "node scripts/refresh-indicators.js",
-    "smoke": "node scripts/smoke.js"
+    "smoke": "node scripts/smoke.js",
+    "build:worker": "node scripts/build-worker-data.js",
+    "deploy:worker": "node scripts/build-worker-data.js && cd worker && wrangler deploy",
+    "refresh": "node scripts/refresh-indicators.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0"

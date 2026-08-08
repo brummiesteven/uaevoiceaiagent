@@ -1,0 +1,8 @@
+name = "alhammadi-mcp"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# The catalogue is baked into the bundle by scripts/build-worker-data.js.
+# data.dubai's firewall rejects datacenter IPs, so a Worker can never fetch it —
+# and does not need to, since the catalogue was always a boot-time snapshot.
+# Nothing in this Worker touches the network.

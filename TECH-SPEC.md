@@ -95,6 +95,11 @@ the capture lane is not in it (§03). Devin sits entirely outside the call: by t
 runs the caller has hung up, so it has no latency budget to blow either. Slack is touched
 only in the single branch where the loop has stalled on a person.
 
+A live Context.dev fetcher does exist in the repo (`MCPServer/src/live.js`) and is verified
+working, but it is deliberately **not** registered as a tool and so is not drawn in the call
+lane: the two fetches measured 15.5s and 24.4s. That is the lane boundary being enforced
+rather than an omission — see §05 for what would have to change to move it across.
+
 Narrowed to the answer path alone, that middle lane is:
 
 ```
@@ -223,10 +228,15 @@ transcripts into the database is worse than one that is switched off. ElevenLabs
 that secret when the workspace-level `post_call_transcription` webhook is created, so it
 could only come from B's side; it is now set in production and the route verifies.
 
-**One gap remains:** `ElevenLabsAgent/agent-settings.json`'s `tool_ids` is still empty, so
-a caller on a live call has no route to the ticket endpoint. The ways in today are the
-`/report` form and a direct POST — Devin has picked up and replied to a real ticket filed
-that way. See §05.
+**The voice leg is attached too, which closes the loop.** `file_issue` is registered as a
+webhook tool in `ElevenLabsAgent/agent-settings.json`'s `tool_ids`, with `conversation_id`
+bound to ElevenLabs' `system__conversation_id` dynamic variable rather than left for the
+LLM to recall — the join key for the transcript is therefore supplied by the platform, not
+by a model that might forget it. A live test call produced a real ticket (`PER-21`) with
+the agent reading back the spelled reference exactly as `prompt.md` specifies.
+
+So every leg of the diagram in §02 now runs in production: a caller speaks, a ticket is
+filed, Devin picks it up, and an escalation reaches a named human in Slack.
 
 The flag is the `needs-engineer` label in Linear, and that is the whole escalation
 contract: no extra service, no polling job, no state of our own to keep in sync, and a
@@ -356,15 +366,13 @@ Four people, four independently-buildable pieces, one dependency that had to lan
 
 ## 05. Extensibility — what v2 looks like
 
-- **Wire the support loop onto the live agent.** Register `file_issue` as a webhook tool
-  against `https://uae-voice-support-loop.vercel.app/api/agent/ticket` and populate
-  `ElevenLabsAgent/agent-settings.json`'s `tool_ids` — the single largest gap between
-  "deployed" and "reachable by a caller," since everything behind the endpoint already
-  runs in production.
-- **Send `conversation_id` on every `file_issue` call.** The transcript and the report
-  arrive out of order by design — the caller complains mid-call, ElevenLabs finishes
-  processing minutes later — and `conversation_id` is the only join key between them. Both
-  halves are live; without the id they simply never meet.
+- **Put the live Context.dev fetch on the call path.** `MCPServer/src/live.js` already
+  fetches Dubai's live population counter and DEWA's current tariff, and degrades to the
+  captured snapshot rather than failing. It is deliberately not registered as a tool: the
+  fetches measured 15.5s and 24.4s, which is far past the ~800ms dead-air budget in §02,
+  and the scrape occasionally returns an empty body. Making this callable means answering
+  the latency question first — speak the cached figure immediately and offer to refresh,
+  or refresh in the background between calls.
 - **Make the live voice call the default**, not opt-in. Requires a stable, non-tunnel
   deployment of `MCPServer/` (today it's local + `cloudflared`, which changes URL on every
   restart) and documenting/provisioning `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` for real

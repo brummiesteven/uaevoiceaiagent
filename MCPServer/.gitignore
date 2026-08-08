@@ -3,3 +3,6 @@ node_modules/
 *.log
 # Regenerated from data.dubai on first boot; also acts as the offline fallback.
 data/catalogue-snapshot.json
+
+# worker/src/data.js IS committed on purpose — it is the catalogue the Worker
+# ships, and without it a fresh clone cannot deploy.
