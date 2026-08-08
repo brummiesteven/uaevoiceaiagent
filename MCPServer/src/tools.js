@@ -33,17 +33,26 @@ const dsCard = (d) => ({
   url: d.url,
 });
 
-export function registerTools(server, { catalogue, indicators, living, voiceOnly = false }) {
-  const registry = [];
+/**
+ * The tool definitions, free of any host.
+ *
+ * Returns plain objects so the same definitions can drive the Node server (via
+ * the MCP SDK) and the Cloudflare Worker (which speaks JSON-RPC directly,
+ * because the SDK's transports need node's http objects). One source of truth —
+ * two servers with drifting tool behaviour would be worse than either alone.
+ */
+export function buildTools({ catalogue, indicators, living }) {
+  const defs = [];
   const add = (name, cfg, handler) => {
-    registry.push({ name, voice: Boolean(cfg.voice), title: cfg.title });
-    // The voice endpoint exposes only the curated subset; every client gets the
-    // full surface on /mcp. Same code, two audiences.
-    if (voiceOnly && !cfg.voice) return;
-    server.registerTool(
+    defs.push({
       name,
-      { title: cfg.title, description: cfg.description, inputSchema: cfg.inputSchema || {} },
-      async (args) => {
+      voice: Boolean(cfg.voice),
+      title: cfg.title,
+      description: cfg.description,
+      inputSchema: cfg.inputSchema || {},
+      // Handlers never throw at the caller: a voice agent given an exception
+      // reads the stack trace out loud.
+      handler: async (args) => {
         try {
           return await handler(args || {});
         } catch (err) {
@@ -53,7 +62,7 @@ export function registerTools(server, { catalogue, indicators, living, voiceOnly
           );
         }
       },
-    );
+    });
   };
 
   /* ---------------------------------------------------------------- search */
@@ -458,5 +467,22 @@ export function registerTools(server, { catalogue, indicators, living, voiceOnly
     );
   });
 
-  return registry;
+  return defs;
+}
+
+/**
+ * Adapter for the Node server: registers the shared definitions with the MCP
+ * SDK. `voiceOnly` filters to the curated subset served on /mcp/voice.
+ */
+export function registerTools(server, { catalogue, indicators, living, voiceOnly = false }) {
+  const defs = buildTools({ catalogue, indicators, living });
+  for (const d of defs) {
+    if (voiceOnly && !d.voice) continue;
+    server.registerTool(
+      d.name,
+      { title: d.title, description: d.description, inputSchema: d.inputSchema },
+      d.handler,
+    );
+  }
+  return defs.map(({ name, voice, title }) => ({ name, voice, title }));
 }
