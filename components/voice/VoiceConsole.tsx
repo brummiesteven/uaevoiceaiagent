@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ServiceRecord } from "@/content/schema";
 import { useVoiceCall } from "@/lib/voice/useVoiceCall";
 import { HELPLINE } from "@/lib/voice/mockAnswers";
@@ -10,7 +10,6 @@ import styles from "./VoiceConsole.module.css";
 
 export function VoiceConsole({ service }: { service: ServiceRecord }) {
   const call = useVoiceCall(service);
-  const [holding, setHolding] = useState(false);
 
   const isBusy = call.state === "connecting" || call.state === "active";
 
@@ -21,25 +20,21 @@ export function VoiceConsole({ service }: { service: ServiceRecord }) {
         ? call.isSpeaking
           ? "Speaking…"
           : "Listening…"
-        : "Hold to talk";
+        : "Press to talk";
 
   const announcement = useMemo(() => {
     if (call.state === "error") return call.error ?? "Something went wrong with the call.";
     if (call.state === "connecting") return "Connecting your call.";
     if (call.state === "active") return call.isSpeaking ? "Agent is speaking." : "Listening.";
-    return "Ready. Press and hold the circle to talk.";
+    return "Ready. Press the circle to talk.";
   }, [call.state, call.isSpeaking, call.error]);
 
-  function beginHold() {
-    if (holding || isBusy) return;
-    setHolding(true);
-    void call.start();
-  }
-
-  function endHold() {
-    if (!holding) return;
-    setHolding(false);
-    void call.end();
+  function handleToggle() {
+    if (isBusy) {
+      void call.end();
+    } else {
+      void call.start();
+    }
   }
 
   return (
@@ -53,36 +48,13 @@ export function VoiceConsole({ service }: { service: ServiceRecord }) {
       <RotatingPrompts prompts={service.exampleQuestions} />
 
       <div className={styles.stage}>
-        <div className={styles.orbWrap}>
-          <Orb active={call.state === "active"} />
-          <button
-            type="button"
-            className={styles.holdButton}
-            data-active={isBusy}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              beginHold();
-            }}
-            onPointerUp={endHold}
-            onPointerLeave={endHold}
-            onPointerCancel={endHold}
-            onKeyDown={(e) => {
-              if ((e.key === " " || e.key === "Enter") && !e.repeat) {
-                e.preventDefault();
-                beginHold();
-              }
-            }}
-            onKeyUp={(e) => {
-              if (e.key === " " || e.key === "Enter") {
-                e.preventDefault();
-                endHold();
-              }
-            }}
-            disabled={call.state === "connecting"}
-          >
-            {label}
-          </button>
-        </div>
+        <Orb
+          active={call.state === "active"}
+          busy={call.state === "connecting"}
+          label={label}
+          onToggle={handleToggle}
+          disabled={call.state === "connecting"}
+        />
 
         {call.state === "error" && (
           <div className={styles.errorBox} role="alert">

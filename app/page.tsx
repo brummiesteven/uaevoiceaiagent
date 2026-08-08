@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllServices, getService } from "@/lib/services";
 import { VoiceConsole } from "@/components/voice/VoiceConsole";
+import { WhatsAppCta } from "@/components/WhatsAppCta";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -12,7 +13,7 @@ export default function Home() {
 
   return (
     <div className={styles.wrap}>
-      <p className={styles.eyebrow}>Alhamadi</p>
+      <p className={styles.eyebrow}>AlHammadi</p>
       <h1 className={styles.title}>Ask about any government service</h1>
 
       <VoiceConsole service={assistant} />
@@ -29,6 +30,8 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <WhatsAppCta />
     </div>
   );
 }

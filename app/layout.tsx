@@ -20,9 +20,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Alhamadi — voice access to UAE government services",
+  title: "AlHammadi — voice access to UAE government services",
   description:
-    "Press and hold to ask a voice assistant about any UAE government service. Not an official government service — a mockup UI.",
+    "Press to ask a voice assistant about any UAE government service. Not an official government service — a mockup UI.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -37,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 
             <header className={styles.header}>
               <Link href="/" className={styles.brand}>
-                Alhamadi
+                AlHammadi
               </Link>
               <DisplayControls />
             </header>

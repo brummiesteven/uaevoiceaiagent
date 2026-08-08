@@ -1,11 +1,18 @@
+.orbWrap {
+  position: relative;
+  width: min(420px, 78vw);
+  height: min(420px, 78vw);
+  flex-shrink: 0;
+}
+
 .orb {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   overflow: hidden;
-  background: radial-gradient(circle at 30% 30%, var(--orb-a), transparent 60%),
-    radial-gradient(circle at 70% 40%, var(--orb-b), transparent 55%),
-    radial-gradient(circle at 50% 75%, var(--orb-c), transparent 60%),
+  background: radial-gradient(circle at 28% 28%, var(--orb-a), transparent 60%),
+    radial-gradient(circle at 72% 38%, var(--orb-b), transparent 55%),
+    radial-gradient(circle at 50% 78%, var(--orb-c), transparent 60%),
     linear-gradient(160deg, var(--orb-a), var(--orb-c));
   filter: saturate(1.15);
 }
@@ -30,6 +37,98 @@
 
 [data-contrast="high"] .orb::before {
   display: none;
+}
+
+.pill {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 1.1rem 0.4rem 0.4rem;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(20, 22, 26, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(20, 22, 26, 0.18);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 48px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pill {
+    background: rgba(20, 21, 22, 0.75);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+:root[data-theme="dark"] .pill {
+  background: rgba(20, 21, 22, 0.75);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.pill[data-active="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+.pill:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+[data-contrast="high"] .pill {
+  background: var(--surface);
+  border: 3px solid var(--ink);
+  backdrop-filter: none;
+}
+
+[data-contrast="high"] .pill[data-active="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.pillIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pill[data-active="true"] .pillIcon {
+  background: var(--accent-ink);
+  color: var(--accent);
+}
+
+[data-contrast="high"] .pillIcon {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.poweredBy {
+  margin: 0.9rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.poweredBy a {
+  color: var(--ink-soft);
+  text-decoration: underline;
 }
 
 @keyframes drift {
