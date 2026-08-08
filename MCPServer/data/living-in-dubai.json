@@ -1,0 +1,239 @@
+{
+  "capturedAt": "2026-08-08",
+  "captureMethod": "context.dev (web-scrape-markdown / web-extract), routed through a UAE IP",
+  "disclaimer": "Captured from official sources on the date above. Rates and entitlements change — always confirm with the issuing body before acting on it.",
+  "utilities": {
+    "provider": "Dubai Electricity and Water Authority (DEWA)",
+    "sourceUrl": "https://dewa.gov.ae/en/consumer/billing/slab-tariff",
+    "note": "Residential slab tariff. Charges rise as monthly consumption crosses each slab.",
+    "electricity": {
+      "unit": "kWh",
+      "currency": "AED",
+      "slabs": [
+        {
+          "from": 0,
+          "to": 2000,
+          "rate": 0.23,
+          "display": "23 fils per kilowatt-hour"
+        },
+        {
+          "from": 2001,
+          "to": 4000,
+          "rate": 0.28,
+          "display": "28 fils per kilowatt-hour"
+        },
+        {
+          "from": 4001,
+          "to": 6000,
+          "rate": 0.32,
+          "display": "32 fils per kilowatt-hour"
+        },
+        {
+          "from": 6001,
+          "to": null,
+          "rate": 0.38,
+          "display": "38 fils per kilowatt-hour"
+        }
+      ],
+      "fuelSurcharge": {
+        "rate": 0.06,
+        "display": "6 fils per kilowatt-hour"
+      },
+      "spokenUnit": "kilowatt-hours"
+    },
+    "water": {
+      "unit": "cubic metre",
+      "currency": "AED",
+      "slabs": [
+        {
+          "from": 0,
+          "to": 27,
+          "rate": 7.7,
+          "display": "7 dirhams 70 per cubic metre"
+        },
+        {
+          "from": 27,
+          "to": 54,
+          "rate": 8.8,
+          "display": "8 dirhams 80 per cubic metre"
+        },
+        {
+          "from": 54,
+          "to": null,
+          "rate": 10.12,
+          "display": "10 dirhams 12 per cubic metre"
+        }
+      ],
+      "fuelSurcharge": {
+        "rate": 1.1,
+        "display": "1 dirham 10 per cubic metre"
+      },
+      "spokenUnit": "cubic metres"
+    }
+  },
+  "accessibility": [
+    {
+      "key": "parking_permit",
+      "topic": "parking",
+      "aliases": [
+        "parking",
+        "parking permit",
+        "park",
+        "disabled parking",
+        "accessible parking",
+        "blue badge"
+      ],
+      "headline": "Free parking permit for People of Determination",
+      "detail": "A permanent People of Determination permit is free, covers up to five linked vehicles, lasts three years, and lets you park anywhere in Dubai. There's a temporary version for up to a year if you're recovering from something, and a tourist permit valid for sixty days. Applications go through the Parkin app or website, and you normally hear back within three working days.",
+      "provider": "Parkin",
+      "contact": "800 7275, or ask@parkin.ae",
+      "sourceUrl": "https://www.parkin.ae/permit"
+    },
+    {
+      "key": "nol_card",
+      "topic": "transport",
+      "aliases": [
+        "nol",
+        "nol card",
+        "bus pass",
+        "travel card",
+        "metro card",
+        "blue nol"
+      ],
+      "headline": "Free travel on the Metro and public buses",
+      "detail": "With a personalised People of Determination nol card you travel free on the Dubai Metro and public buses, and intercity buses too. The card costs seventy dirhams — fifty for the card itself and twenty loaded on as credit for things it doesn't cover, like the water bus and parking. It lasts five years, and you can renew it on the same terms.",
+      "provider": "Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "salik",
+      "topic": "driving",
+      "aliases": [
+        "salik",
+        "toll",
+        "road toll",
+        "toll exemption"
+      ],
+      "headline": "Salik toll exemption for one vehicle",
+      "detail": "People of Determination can have one vehicle exempted from Salik road tolls. The exemption is renewed every year.",
+      "provider": "Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "accessible_taxi",
+      "topic": "taxi",
+      "aliases": [
+        "taxi",
+        "cab",
+        "accessible taxi",
+        "wheelchair taxi",
+        "wheelchair accessible"
+      ],
+      "headline": "Wheelchair-accessible taxis, around the clock",
+      "detail": "Dubai Taxi runs a fleet of accessible taxis twenty-four hours a day covering the whole emirate, with wheelchair lifts, a wheelchair on board, seating for a companion, and drivers trained for it. You're charged the same fare as any other taxi.",
+      "provider": "Dubai Taxi, Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "metro_access",
+      "topic": "metro",
+      "aliases": [
+        "metro",
+        "train",
+        "rail",
+        "station",
+        "metro accessible",
+        "tram"
+      ],
+      "headline": "Step-free Metro with wheelchair spaces on every carriage",
+      "detail": "Every Metro station has tactile guide paths for visually impaired passengers, lifts sized for wheelchairs, step-free routes from the car park, and accessible toilets. Each carriage has a dedicated wheelchair space right by the door. There are audio announcements for visually impaired passengers and screens for those who are hard of hearing, and ticket booths are built at wheelchair height.",
+      "provider": "Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "bus_access",
+      "topic": "bus",
+      "aliases": [
+        "bus",
+        "buses",
+        "low floor",
+        "public bus"
+      ],
+      "headline": "Low-floor buses across the network",
+      "detail": "Dubai's public buses are low-floor so you can board without steps, with request buttons within reach from a seated position and air-conditioned shelters at the stops.",
+      "provider": "Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "marine_access",
+      "topic": "marine",
+      "aliases": [
+        "water bus",
+        "ferry",
+        "abra",
+        "boat",
+        "marine"
+      ],
+      "headline": "Water buses and ferries take wheelchairs",
+      "detail": "The water bus has space for up to three wheelchairs and the Dubai Ferry for two, with foldable seating to make room. Marine stations are designed for step-free access, and there's a crew member at each marina to help you board.",
+      "provider": "Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "customer_service",
+      "topic": "services",
+      "aliases": [
+        "service centre",
+        "customer service",
+        "queue",
+        "counter",
+        "licensing"
+      ],
+      "headline": "Priority service at RTA centres",
+      "detail": "RTA customer service centres have fast-track queues and dedicated counters for People of Determination, with accessible parking by the main entrance. The main ones are at Umm Ramool, and the licensing departments in Deira and Al Barsha.",
+      "provider": "Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "driving_adaptation",
+      "topic": "driving",
+      "aliases": [
+        "driving",
+        "drive",
+        "licence",
+        "license",
+        "adapt car",
+        "vehicle adaptation",
+        "hand controls"
+      ],
+      "headline": "Vehicle adaptation and licensing support",
+      "detail": "RTA's licensing arm will advise you on the adaptations a vehicle needs, point you to companies that fit them, and then test and formally endorse the vehicle as adapted for a driver who is a Person of Determination.",
+      "provider": "Roads and Transport Authority",
+      "contact": "ask@rta.ae",
+      "sourceUrl": "https://www.rta.ae/wps/portal/rta/ae/home/people-of-determination"
+    },
+    {
+      "key": "medical_parking",
+      "topic": "parking",
+      "aliases": [
+        "hospital parking",
+        "medical parking",
+        "clinic parking",
+        "treatment"
+      ],
+      "headline": "Free parking near a hospital during treatment",
+      "detail": "If you're visiting a hospital regularly for treatment there's a special medical permit that gives you free parking in paid public spaces within five hundred metres of the facility, for as long as you need it.",
+      "provider": "Parkin",
+      "contact": "800 7275, or ask@parkin.ae",
+      "sourceUrl": "https://www.parkin.ae/permit"
+    }
+  ],
+  "capturedAtSpoken": "August 2026"
+}

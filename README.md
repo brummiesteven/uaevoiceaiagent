@@ -82,10 +82,16 @@ ElevenLabsAgent/
   prompt.md               agent system prompt — decision rules, citation/refusal behaviour
   agent-settings.json      language, ASR, turn-taking, voice/accent tuning, MCP tool list
   sync-agent.ts            pushes prompt + settings to the live ElevenLabs agent
+
+MCPServer/               C — the MCP server, its tools and data
+  SETUP.md                 start here: nothing to a working voice agent, ~15 min
+  README.md                tools, data sources, known landmines
+  agent-prompt.md          the prompt this was tested against, and why each rule exists
 ```
 
-MCP server (C), data source (A), and the ticket database/webhook/Linear wiring (D) live
-in their own paths once pushed — see their respective docs when those land.
+The ticket database/webhook/Linear wiring (D) lives in its own path once pushed — see its
+docs when those land. The MCP server reads data.dubai's public API directly, so there is
+no separate data-source component to stand up.
 
 ## Known limits
 
