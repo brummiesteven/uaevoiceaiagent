@@ -1,0 +1,46 @@
+{
+  "slug": "parking-permit-people-of-determination",
+  "name": "Parking Permit for People of Determination",
+  "authority": "Roads and Transport Authority, Dubai",
+  "summary": "A permit that lets people of determination use designated accessible parking bays in Dubai.",
+  "audience": [
+    "People of determination who drive",
+    "A driver who regularly transports a person of determination"
+  ],
+  "description": "The parking permit for people of determination allows the holder to use parking bays reserved for people of determination in Dubai, and may include an exemption from public parking fees under conditions published by the Roads and Transport Authority. The permit is linked to a vehicle and to the holder, and must be renewed before it expires. Using a reserved bay without a valid permit is a fineable offence.",
+  "eligibility": [
+    {
+      "id": "status-proof",
+      "question": "Do I need a people of determination card?",
+      "requirement": "The applicant must provide proof of status, such as a Sanad Card or a People of Determination Card, or an approved medical report."
+    },
+    {
+      "id": "vehicle-link",
+      "question": "Does the car have to be in my name?",
+      "requirement": "The permit is issued against a vehicle registration; where the applicant does not drive, the vehicle of the accompanying driver can be registered instead."
+    }
+  ],
+  "requiredDocuments": [
+    { "name": "Emirates ID", "required": true },
+    {
+      "name": "Proof of people of determination status",
+      "required": true,
+      "notes": "Sanad Card, People of Determination Card, or an approved medical report."
+    },
+    { "name": "Vehicle registration card (mulkiya)", "required": true },
+    { "name": "Driving licence", "required": false, "notes": "Required when the applicant drives." }
+  ],
+  "fees": [{ "label": "Permit issuance", "amountAed": null, "notes": "Not published on the source page." }],
+  "processingTime": "Not published on the source page.",
+  "channels": [
+    "Online through the Roads and Transport Authority website or app",
+    "In person at a Roads and Transport Authority customer happiness centre"
+  ],
+  "helpline": "800 9090",
+  "languages": ["English", "Arabic"],
+  "source": {
+    "url": "https://u.ae/en/information-and-services/transportation/driving-in-the-uae",
+    "scrapedAt": "2026-01-01T00:00:00.000Z",
+    "humanVerified": false
+  }
+}

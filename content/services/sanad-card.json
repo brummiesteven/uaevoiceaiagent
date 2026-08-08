@@ -1,0 +1,54 @@
+{
+  "slug": "sanad-card",
+  "name": "Sanad Card",
+  "authority": "Community Development Authority, Dubai",
+  "summary": "A Dubai card for people of determination that gives access to support services and concessions.",
+  "audience": [
+    "People of determination residing in Dubai",
+    "Parents or guardians applying on behalf of a child"
+  ],
+  "description": "The Sanad Card identifies the holder as a person of determination in Dubai and is used to access support services, concessions and priority handling across participating entities. An application is assessed by the Community Development Authority, which may request a medical or functional assessment before the card is issued. The card is issued for a fixed period and must be renewed before it expires.",
+  "eligibility": [
+    {
+      "id": "residency",
+      "question": "Do I need to live in Dubai?",
+      "requirement": "The applicant must hold a valid Emirates ID and reside in the Emirate of Dubai."
+    },
+    {
+      "id": "assessment",
+      "question": "Do I need a medical report?",
+      "requirement": "A disability assessment or medical report from an approved health authority is required to support the application."
+    }
+  ],
+  "requiredDocuments": [
+    { "name": "Emirates ID", "required": true },
+    { "name": "Passport copy with residence visa page", "required": true },
+    {
+      "name": "Medical or disability assessment report",
+      "required": true,
+      "notes": "Issued by an approved health authority."
+    },
+    {
+      "name": "Recent passport-size photograph",
+      "required": true
+    },
+    {
+      "name": "Guardianship or custody document",
+      "required": false,
+      "notes": "Only when a guardian applies on behalf of the applicant."
+    }
+  ],
+  "fees": [{ "label": "Card issuance", "amountAed": null, "notes": "Not published on the source page." }],
+  "processingTime": "Not published on the source page.",
+  "channels": [
+    "Online through the Community Development Authority digital services portal",
+    "In person at a Community Development Authority customer happiness centre"
+  ],
+  "helpline": "800 988",
+  "languages": ["English", "Arabic"],
+  "source": {
+    "url": "https://u.ae/en/information-and-services/social-affairs/people-of-determination",
+    "scrapedAt": "2026-01-01T00:00:00.000Z",
+    "humanVerified": false
+  }
+}

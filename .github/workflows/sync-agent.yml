@@ -1,0 +1,32 @@
+# The step that makes a merged PR change the live system. Without this the repair
+# loop stops at "someone opened a ticket".
+name: Sync agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - agent-config/prompt.md
+      - content/services/**
+      - content/schema.ts
+      - scripts/sync-agent.ts
+  workflow_dispatch:
+
+concurrency:
+  group: sync-agent
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run sync:agent
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_AGENT_ID: ${{ secrets.ELEVENLABS_AGENT_ID }}
