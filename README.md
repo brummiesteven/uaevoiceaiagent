@@ -49,7 +49,7 @@ Fill `.env.local`:
 | `CONTEXT_DEV_API_KEY` | Context.dev dashboard → API keys |
 | `ELEVENLABS_API_KEY` | ElevenLabs → Profile → API keys |
 | `ELEVENLABS_AGENT_ID` | ElevenLabs → Agents → your agent |
-| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | Same agent id — the browser widget needs it |
+| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | Same agent id — the browser call panel needs it |
 | `ELEVENLABS_WEBHOOK_SECRET` | ElevenLabs → Webhooks (created when you add the post-call webhook) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project settings → API |
@@ -135,12 +135,12 @@ scripts/
   adversarial/audio.ts         renders 2 personas to audio, mixes noise via ffmpeg
 app/
   page.tsx                     service index
-  services/[slug]/page.tsx     service page + call widget + feedback form
-  triage/page.tsx              flagged calls, transcripts and their tickets
+  services/[slug]/page.tsx     service page + voice call, live transcript, feedback form
+  triage/page.tsx              evidence board: adversarial verdicts + flagged calls
   api/mcp/route.ts             MCP server (JSON-RPC over one POST)
   api/feedback/route.ts        feedback → Supabase → Linear → Devin
   api/elevenlabs-webhook/route.ts   attaches transcript to the feedback row
-components/                    call panel + feedback form (client)
+components/                    call panel (ElevenLabs React SDK) + feedback form
 lib/                           env, Supabase, Linear, store, MCP tools
 supabase/schema.sql
 .github/workflows/ci.yml       lint, typecheck, build
