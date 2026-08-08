@@ -1,7 +1,32 @@
+import fs from "node:fs";
+import path from "node:path";
+import { personas } from "@/scripts/adversarial/personas";
 import { listTriage, storeBackend } from "@/lib/store";
 import { TranscriptTurn } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * The evidence board, not an analytics dashboard. Call volume and average duration
+ * would say nothing about whether the agent is right; these two tables are the whole
+ * claim the project makes — the agent survives callers designed to break it, and when
+ * it does not, the failure becomes a ticket a coding agent picks up.
+ */
+
+type Summary = {
+  ranAt: string;
+  results: { persona: string; passed: boolean; failed: string[] }[];
+};
+
+/** Written by `npm run test:adversarial` and committed, so the deploy can show it. */
+function readAdversarialSummary(): Summary | null {
+  try {
+    const file = path.join(process.cwd(), "scripts", "adversarial", "results", "summary.json");
+    return JSON.parse(fs.readFileSync(file, "utf8")) as Summary;
+  } catch {
+    return null;
+  }
+}
 
 function Transcript({ turns }: { turns: TranscriptTurn[] }) {
   return (
@@ -19,12 +44,73 @@ function Transcript({ turns }: { turns: TranscriptTurn[] }) {
 
 export default async function TriagePage() {
   const rows = await listTriage();
+  const summary = readAdversarialSummary();
+  const byPersona = new Map(summary?.results.map((r) => [r.persona, r]) ?? []);
+
   return (
     <>
-      <h1>Flagged calls</h1>
+      <h1>Evidence</h1>
       <p>
-        Every call a caller flagged as wrong, the transcript the post-call webhook attached, and the
-        ticket it became.
+        Two things are on this page: how the agent held up against callers built to break it,
+        and every call a real caller flagged as wrong along with the ticket it became.
+      </p>
+
+      <h2>Adversarial callers</h2>
+      <p>
+        Five simulated callers, each targeting one failure mode, with criteria checkable from
+        the transcript. Run with <code>npm run test:adversarial</code>.
+        {summary ? ` Last run ${new Date(summary.ranAt).toLocaleString("en-GB")}.` : ""}
+      </p>
+      {!summary && (
+        <p className="notice">
+          The suite has not been run on this deploy yet, so no verdicts are shown — only the
+          personas that will run.
+        </p>
+      )}
+      <table className="triage">
+        <caption>{personas.length} personas</caption>
+        <thead>
+          <tr>
+            <th scope="col">Caller</th>
+            <th scope="col">Failure mode it targets</th>
+            <th scope="col">Verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+          {personas.map((persona) => {
+            const result = byPersona.get(persona.id);
+            return (
+              <tr key={persona.id}>
+                <th scope="row">{persona.id}</th>
+                <td>
+                  {persona.targets}
+                  {persona.audio ? (
+                    <>
+                      <br />
+                      <span className="muted">Also run as audio: {persona.audio.note}</span>
+                    </>
+                  ) : null}
+                </td>
+                {/* Pass/fail in words, never colour alone. */}
+                <td>
+                  {!result ? (
+                    <span className="muted">Not run</span>
+                  ) : result.passed ? (
+                    "Passed"
+                  ) : (
+                    `Failed: ${result.failed.join(", ")}`
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <h2>Calls a caller flagged</h2>
+      <p>
+        The transcript is attached by the post-call webhook, which arrives after the caller has
+        already flagged the call — the two halves join on the conversation id.
       </p>
       {storeBackend() === "memory" && (
         <p className="notice">
