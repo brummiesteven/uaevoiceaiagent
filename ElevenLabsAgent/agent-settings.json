@@ -1,0 +1,55 @@
+{
+  "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; sync-agent.ts PATCHes it to match this file on every push to main. Field names verified against https://elevenlabs.io/docs/api-reference/agents/update — see notes below on the two items that still need live-account confirmation.",
+
+  "first_message": {
+    "default": "Hi, I'm here to help with UAE services — what's going on?",
+    "_why": "Agent-level fallback for direct/dashboard testing where no session-start override is passed. Real per-call variety comes from the UI picking randomly from intros.json and passing it as a conversation_config_override.agent.first_message (or Conversation.startSession({ overrides }) in the JS SDK) — see intros.json. This default is just intros.json's first entry so a plain test call still gets a sensible greeting."
+  },
+
+  "language": {
+    "mode": "multi",
+    "primary": "en",
+    "additional": ["ar"],
+    "_why": "Speaker in the architecture diagram is explicitly English + Arabic. Auto-detect/multi-language over locking to English-only, since misdetecting an Arabic-accented English caller as needing translation (or vice versa) is worse than the small added latency."
+  },
+
+  "asr": {
+    "provider": "scribe_realtime",
+    "quality": "high",
+    "_why": "ElevenLabs' native real-time Scribe ASR — no custom/bolted-on STT layer, per TECH-SPEC's decision to avoid an extra round-trip inside the real-time loop. 'scribe_realtime' is the current provider value; the older 'elevenlabs' provider is being deprecated in favour of it."
+  },
+
+  "llm": {
+    "model": "[FILL: pick from the actual dropdown in the ElevenLabs dashboard when creating the agent]",
+    "_why": "Docs did not give a reliable enum for this field — different doc pages returned inconsistent model-version strings. Pick a low-latency conversational model from whatever the dashboard actually offers rather than guessing a string here."
+  },
+
+  "tts": {
+    "model_id": "eleven_turbo_v2_5",
+    "voice_id": "[FILL: voice selected in dashboard]",
+    "_why": "eleven_turbo_v2_5 confirmed as a valid tts.model_id value against the update-agent API reference."
+  },
+
+  "turn": {
+    "turn_timeout": 10,
+    "turn_eagerness": "patient",
+    "turn_model": "turn_v3",
+    "_why": "Non-native/accented speakers pause mid-sentence more than the defaults assume (turn_timeout default is 7s). 'patient' eagerness plus a slightly longer timeout avoids cutting callers off mid-thought — same intent as the earlier 'low interruption sensitivity' idea, using the real field names this time. Tune further against A's real questions once available."
+  },
+
+  "pronunciation_dictionary": [],
+  "_pronunciation_dictionary_note": "Populate with UAE service/entity names once A's content/schema.ts and content/services/*.json land — generic ASR will mangle these.",
+
+  "system_tools": {
+    "language_detection": true,
+    "_why": "Required for the agent to switch its spoken response language mid-call when the caller switches languages — multi-language mode alone only picks the language at call start. This system tool is NOT on by default even with language.mode = multi.",
+    "_json_placement_unconfirmed": "Two doc sources disagreed on where this goes in the actual PATCH body: agent.prompt.built_in_tools vs. an entry {\"type\": \"system\", \"name\": \"language_detection\"} inside agent.prompt.tools. sync-agent.ts currently emits the 'tools array' shape as the best-supported guess — verify against a GET on the real agent once one exists and correct if wrong."
+  },
+
+  "mcp_server_ids": [],
+  "native_mcp_server_ids": [],
+  "_mcp_server_ids_note": "Populate once C's MCP server is registered as a resource (dashboard, or a separate 'create MCP server' API call not yet made anywhere in this repo) — these hold that resource's ID, not a tool definition. mcp_server_ids vs native_mcp_server_ids: verify with C which one applies to their setup once the server exists.",
+
+  "tool_ids": [],
+  "_tool_ids_note": "Holds the ID of the file_issue webhook tool resource (see prompt.md's 'Filing an issue' section) once D's ticket webhook exists and the tool is registered with ElevenLabs. Like mcp_server_ids, this is an ID reference, not an inline tool definition."
+}

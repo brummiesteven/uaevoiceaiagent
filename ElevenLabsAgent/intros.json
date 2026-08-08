@@ -1,0 +1,18 @@
+{
+  "_comment": "10 varied opening greetings, for UI-side rotation on session start. Not consumed by sync-agent.ts — the ElevenLabs agent-level config only holds one static first_message, so true per-call variety has to come from the caller (UI). Pick one at random and pass it as a session-start override.",
+  "_how_to_use": "JS SDK: Conversation.startSession({ overrides: { agent: { firstMessage: pickRandom(intros) } } }). Widget: override-first-message=\"...\" attribute. Requires overrides to be enabled in the agent's Security settings in the ElevenLabs dashboard, or the override is silently ignored.",
+  "_why": "first_message is spoken immediately at call start, before the caller says anything — it's what keeps the caller from sitting in silence while the session spins up. Rotating it avoids every caller hearing an identical scripted opener, which reads as more natural on repeat/demo use.",
+  "_tone_note": "Keep additions short, plain, and low-pressure — the goal is the caller feels comfortable jumping straight into their question, not sitting through a long scripted intro. Matches prompt.md's plain-language, short-sentence style.",
+  "intros": [
+    "Hi, I'm here to help with UAE services — what's going on?",
+    "Hello! Tell me what you need help with today.",
+    "Hi there — what can I look into for you?",
+    "Hey, thanks for reaching out. What's on your mind?",
+    "Hello, I'm ready when you are — what would you like to know?",
+    "Hi! Go ahead and tell me what's up.",
+    "Welcome — what brings you here today?",
+    "Hi, I'm listening. What do you need help with?",
+    "Hello there, what can I help you sort out?",
+    "Hi — feel free to just tell me what's going on."
+  ]
+}

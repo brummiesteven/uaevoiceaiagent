@@ -1,0 +1,25 @@
+name: Sync ElevenLabs agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ElevenLabsAgent/**"
+      - "content/services/**"
+
+jobs:
+  sync-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - run: npm run sync-agent
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_AGENT_ID: ${{ secrets.ELEVENLABS_AGENT_ID }}
