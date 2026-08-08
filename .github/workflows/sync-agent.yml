@@ -6,7 +6,16 @@ on:
   push:
     branches: [main]
     paths:
-      - agent-config/prompt.md
+      - agent-config/**
+      - content/services/**
+      - content/schema.ts
+      - scripts/sync-agent.ts
+  # Devin's repair PRs edit exactly these files. Building the payload on the PR means a
+  # broken settings file or an unfilled placeholder fails there, not after merge when the
+  # sync has already pushed it to the agent people are calling.
+  pull_request:
+    paths:
+      - agent-config/**
       - content/services/**
       - content/schema.ts
       - scripts/sync-agent.ts
@@ -17,7 +26,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run sync:agent:check
+
   sync:
+    needs: check
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

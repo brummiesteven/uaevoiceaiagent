@@ -1,5 +1,6 @@
 /**
- * Pushes agent-config/prompt.md and the knowledge base to the live ElevenLabs agent.
+ * Pushes agent-config/prompt.md, agent-config/agent-settings.json and the knowledge base
+ * to the live ElevenLabs agent.
  *
  * This is what makes a merged PR change the deployed system rather than just the repo:
  * .github/workflows/sync-agent.yml runs it on every push to main. Without it the repair
@@ -85,6 +86,28 @@ async function uploadKnowledgeBase(): Promise<KnowledgeBaseEntry[]> {
 }
 
 /**
+ * agent-config/agent-settings.json is a partial `conversation_config` written by hand,
+ * with its reasoning inline. Strip the annotation keys before the request so the file can
+ * explain itself without the API seeing fields it does not recognise.
+ */
+function stripAnnotations(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripAnnotations);
+  if (value === null || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => !key.startsWith("_"))
+      .map(([key, nested]) => [key, stripAnnotations(nested)]),
+  );
+}
+
+type Settings = { agent?: { prompt?: Record<string, unknown> } } & Record<string, unknown>;
+
+function readSettings(): Settings {
+  const file = path.join(process.cwd(), "agent-config", "agent-settings.json");
+  return stripAnnotations(JSON.parse(fs.readFileSync(file, "utf8"))) as Settings;
+}
+
+/**
  * A `[FILL: ...]` left in the prompt is not a documentation problem here — the agent
  * reads the prompt aloud. "Call [FILL: helpline number]" is what a caller would hear
  * in the refusal path. The same is true of the knowledge base. Fail before the PATCH,
@@ -107,8 +130,10 @@ function assertNoPlaceholders(files: Record<string, string>) {
 
 async function main() {
   const prompt = fs.readFileSync(path.join(process.cwd(), "agent-config", "prompt.md"), "utf8");
+  const settingsFile = path.join(process.cwd(), "agent-config", "agent-settings.json");
   assertNoPlaceholders({
     "agent-config/prompt.md": prompt,
+    "agent-config/agent-settings.json": fs.readFileSync(settingsFile, "utf8"),
     ...Object.fromEntries(
       getServices().map((s) => [`content/services/${s.slug}.json`, toKnowledgeBaseDocument(s).text]),
     ),
@@ -117,10 +142,17 @@ async function main() {
 
   const knowledgeBase = await uploadKnowledgeBase();
 
+  // Voice, ASR, turn-taking and language come from agent-settings.json; the prompt and the
+  // knowledge base are layered on top. Both halves ship in the same PATCH so a merged PR
+  // cannot leave the live agent half-updated.
+  const settings = readSettings();
   const body = {
     conversation_config: {
+      ...settings,
       agent: {
+        ...settings.agent,
         prompt: {
+          ...settings.agent?.prompt,
           prompt,
           knowledge_base: knowledgeBase,
           // RAG, not a stuffed prompt: the scraped pages are far longer than the

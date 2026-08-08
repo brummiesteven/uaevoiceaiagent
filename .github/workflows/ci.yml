@@ -18,6 +18,4 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
-      # Catches an unfilled [FILL] in the prompt or knowledge base on the PR itself,
-      # rather than after merge when the sync has already pushed it to the live agent.
-      - run: npm run sync:agent:check
+      # The agent payload is checked in sync-agent.yml, which owns that surface.
