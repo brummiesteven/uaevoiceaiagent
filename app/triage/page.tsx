@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { personas } from "@/scripts/adversarial/personas";
+import { fetchIssueStates, LinearIssueState } from "@/lib/linear";
 import { listTriage, storeBackend } from "@/lib/store";
-import { TranscriptTurn } from "@/lib/types";
+import { Ticket as TicketType, TranscriptTurn } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +43,56 @@ function Transcript({ turns }: { turns: TranscriptTurn[] }) {
   );
 }
 
+/**
+ * The whole trail in one cell. The Linear identifier and state are printed rather than
+ * linked because the workspace is private; the attachments Devin adds — the branch, then
+ * the pull request — are public, and those are the links worth following.
+ */
+function Ticket({ ticket, issue }: { ticket: TicketType; issue?: LinearIssueState }) {
+  return (
+    <>
+      <b>{issue?.identifier ?? ticket.linearIdentifier ?? "Ticket"}</b>
+      <br />
+      {issue ? (
+        <>
+          {issue.state}
+          <br />
+          <span className="muted">{issue.title}</span>
+        </>
+      ) : (
+        <span className="muted">
+          {ticket.linearUrl ? "State unavailable — Linear not readable from this deploy" : "Created"}
+        </span>
+      )}
+      {ticket.assignee ? (
+        <>
+          <br />
+          <span className="muted">Assigned to {ticket.assignee}</span>
+        </>
+      ) : null}
+      {issue?.links.map((link) => (
+        <span key={link.url}>
+          <br />
+          <a href={link.url}>{link.title}</a>
+        </span>
+      ))}
+      {ticket.devinSessionUrl ? (
+        <>
+          <br />
+          <a href={ticket.devinSessionUrl}>Devin session</a>
+        </>
+      ) : null}
+    </>
+  );
+}
+
 export default async function TriagePage() {
   const rows = await listTriage();
+  // Read the issues rather than linking to them: Linear is a private workspace, so a link
+  // is a dead end for anyone reviewing this who is not on the team.
+  const issues = await fetchIssueStates(
+    rows.map((r) => r.ticket?.linearIssueId).filter((id): id is string => Boolean(id)),
+  );
   const summary = readAdversarialSummary();
   const byPersona = new Map(summary?.results.map((r) => [r.persona, r]) ?? []);
 
@@ -110,7 +159,9 @@ export default async function TriagePage() {
       <h2>Calls a caller flagged</h2>
       <p>
         The transcript is attached by the post-call webhook, which arrives after the caller has
-        already flagged the call — the two halves join on the conversation id.
+        already flagged the call — the two halves join on the conversation id. The ticket state is
+        read from Linear on each load, so you can follow a flagged call through to the pull request
+        that fixed it without an account on our workspace.
       </p>
       {storeBackend() === "memory" && (
         <p className="notice">
@@ -130,7 +181,7 @@ export default async function TriagePage() {
               <th scope="col">When</th>
               <th scope="col">Service</th>
               <th scope="col">What the caller said</th>
-              <th scope="col">Ticket</th>
+              <th scope="col">Ticket and repair</th>
             </tr>
           </thead>
           <tbody>
@@ -150,17 +201,11 @@ export default async function TriagePage() {
                   )}
                 </td>
                 <td>
-                  {row.ticket?.linearUrl ? (
-                    <a href={row.ticket.linearUrl}>{row.ticket.linearIdentifier}</a>
-                  ) : (
+                  {!row.ticket ? (
                     <span className="muted">Not ticketed</span>
+                  ) : (
+                    <Ticket ticket={row.ticket} issue={issues.get(row.ticket.linearIssueId ?? "")} />
                   )}
-                  {row.ticket?.assignee ? (
-                    <>
-                      <br />
-                      <span className="muted">Assigned to {row.ticket.assignee}</span>
-                    </>
-                  ) : null}
                 </td>
               </tr>
             ))}

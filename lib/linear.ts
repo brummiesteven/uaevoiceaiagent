@@ -84,6 +84,69 @@ export function issueBody(feedback: CallFeedback, appUrl: string | null): string
     .join("\n");
 }
 
+export type LinearIssueState = {
+  identifier: string;
+  title: string;
+  /** Workflow state name as configured on the team — "Todo", "In Progress", "Done". */
+  state: string;
+  /** Links Devin attaches to the issue as it works: the branch, then the pull request. */
+  links: { title: string; url: string }[];
+};
+
+/**
+ * Reads the current state of issues we already created, for /triage.
+ *
+ * The point is that a Linear workspace is private. Anyone reviewing this project — or any
+ * member of the public looking at the deployed triage page — cannot open `linearUrl`, so a
+ * bare link is the one place the evidence trail dead-ends. The server holds the API key and
+ * the reader does not, so read the state here and print it. The attachments carry the pull
+ * request URL, which is public, and that is where the trail picks up again.
+ *
+ * Never throws: a Linear outage or a missing key degrades /triage to the stored identifier
+ * rather than taking the page down.
+ */
+export async function fetchIssueStates(ids: string[]): Promise<Map<string, LinearIssueState>> {
+  const found = new Map<string, LinearIssueState>();
+  if (!linearConfigured() || ids.length === 0) return found;
+  try {
+    const data = await linearRequest<{
+      issues: {
+        nodes: {
+          id: string;
+          identifier: string;
+          title: string;
+          state: { name: string } | null;
+          attachments: { nodes: { title: string | null; url: string }[] };
+        }[];
+      };
+    }>(
+      `query IssueStates($ids: [ID!]) {
+          issues(filter: { id: { in: $ids } }, first: 100) {
+            nodes {
+              id identifier title
+              state { name }
+              attachments(first: 10) { nodes { title url } }
+            }
+          }
+        }`,
+      { ids },
+    );
+    for (const issue of data.issues.nodes) {
+      found.set(issue.id, {
+        identifier: issue.identifier,
+        title: issue.title,
+        state: issue.state?.name ?? "Unknown",
+        links: issue.attachments.nodes.map((a) => ({ title: a.title ?? a.url, url: a.url })),
+      });
+    }
+  } catch (error) {
+    process.stderr.write(
+      `Could not read Linear issue states: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+  }
+  return found;
+}
+
 export async function createIssueForFeedback(
   feedback: CallFeedback,
   appUrl: string | null,
