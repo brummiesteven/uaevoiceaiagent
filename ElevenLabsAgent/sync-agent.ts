@@ -47,6 +47,7 @@ async function elevenlabsFetch(path: string, init: RequestInit) {
 }
 
 type AgentSettings = {
+  first_message: { default: string };
   language: { mode: string; primary: string; additional: string[] };
   asr: { provider: string; quality: string };
   llm: { model: string };
@@ -98,6 +99,7 @@ function buildAgentPatch(prompt: string, settings: AgentSettings) {
   return {
     conversation_config: {
       agent: {
+        first_message: settings.first_message.default,
         prompt: promptConfig,
         language: settings.language.primary,
       },

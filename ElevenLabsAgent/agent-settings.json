@@ -1,6 +1,11 @@
 {
   "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; sync-agent.ts PATCHes it to match this file on every push to main. Field names verified against https://elevenlabs.io/docs/api-reference/agents/update — see notes below on the two items that still need live-account confirmation.",
 
+  "first_message": {
+    "default": "Hi, I'm here to help with UAE services — what's going on?",
+    "_why": "Agent-level fallback for direct/dashboard testing where no session-start override is passed. Real per-call variety comes from the UI picking randomly from intros.json and passing it as a conversation_config_override.agent.first_message (or Conversation.startSession({ overrides }) in the JS SDK) — see intros.json. This default is just intros.json's first entry so a plain test call still gets a sensible greeting."
+  },
+
   "language": {
     "mode": "multi",
     "primary": "en",
