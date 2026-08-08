@@ -92,10 +92,13 @@ pull request that fixed it, without needing an account on our workspace. Slack i
 for the two cases where the loop has stalled on a person: Devin was never reached, or Devin
 escalated. See `SupportLoop/README.md`.
 
-**This isn't wired to the live agent yet.** `ElevenLabsAgent/agent-settings.json`'s
-`tool_ids` is still empty — the webhook itself works (you can call it directly, and Devin
-has picked up and replied to a real ticket filed that way), but a caller talking to the
-live agent cannot file one through the call yet. See `TECH-SPEC.md` §5 for what's left.
+**This is wired to the live agent.** `file_issue` is registered as a webhook tool
+(`ElevenLabsAgent/agent-settings.json`'s `tool_ids`), with `conversation_id` bound to
+ElevenLabs' `system__conversation_id` dynamic variable rather than left for the LLM to
+recall. A caller talking to the live agent can file a ticket mid-call and hear it read
+back as a spelled-out reference (e.g. "P E R 2 1") — verified live, ticket visible on
+`/triage` within seconds. The post-call transcript webhook (attaches the call transcript
+to the ticket) is a separate, still-open step — see `TECH-SPEC.md` §5.
 
 ## Ownership
 
@@ -209,8 +212,10 @@ SupportLoop/              D — the Next.js app behind the support flow
 
 - The frontend's voice call is simulated by default (see How it works above) — it needs
   `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` set to actually talk to the live agent.
-- The support loop's webhook works standalone but isn't attached to the live agent yet
-  (`tool_ids` empty) — a caller can't file a ticket through a real call today.
+- The support loop's `file_issue` webhook is attached to the live agent and verified
+  end to end. The post-call transcript webhook is not yet configured (needs a one-time
+  secret from the ElevenLabs dashboard, sent to D) — until then, filed tickets don't get
+  the call transcript attached.
 - `content/services/*.json` are hand-written placeholders, not a verified scrape — see
   `AGENTS.md` before quoting a value from one as fact.
 - Root `/triage` (persona test results) and `SupportLoop`'s `/triage` (ticket audit trail)

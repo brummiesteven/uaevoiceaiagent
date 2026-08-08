@@ -130,10 +130,13 @@ which failures belong to "the agent couldn't find data" versus "the agent itself
 the caller." The agent reaches the ticket-filing webhook directly, the same way it
 reaches MCP directly — no orchestration layer here either.
 
-**This webhook is built and independently verified (Devin has picked up and replied to a
-real ticket filed through it), but is not yet attached to the live agent** —
-`ElevenLabsAgent/agent-settings.json`'s `tool_ids` is empty, so a caller talking to the
-live agent cannot file a ticket through the call today. See §05.
+**This webhook is now attached to the live agent and verified end to end**, including
+the voice-agent leg that was previously the one open gap: `file_issue` is registered as
+a webhook tool (`ElevenLabsAgent/agent-settings.json`'s `tool_ids`), `conversation_id` is
+bound to ElevenLabs' `system__conversation_id` dynamic variable rather than left for the
+LLM to recall, and a live test call produced a real ticket (`PER-21`) with the agent
+reading back the spelled reference exactly as `prompt.md` specifies. The post-call
+transcript webhook (§05) is the one piece still open.
 
 The flag is the `needs-engineer` label in Linear, and that is the whole escalation
 contract: no extra service, no polling job, no state of our own to keep in sync, and a
@@ -242,9 +245,10 @@ Four people, four independently-buildable pieces, one dependency that had to lan
 
 ## 05. Extensibility — what v2 looks like
 
-- **Wire the support loop onto the live agent.** Register `file_issue` as a webhook tool
-  and populate `ElevenLabsAgent/agent-settings.json`'s `tool_ids` — the single largest gap
-  between "built" and "usable end to end," since the webhook itself already works.
+- **Add the post-call transcription webhook.** `file_issue` is wired and verified (§02);
+  this is what's left — a one-time secret from the ElevenLabs dashboard, sent to D for
+  `ELEVENLABS_WEBHOOK_SECRET` — after which filed tickets get the call transcript attached
+  automatically, closing the last gap between "built" and "usable end to end."
 - **Make the live voice call the default**, not opt-in. Requires a stable, non-tunnel
   deployment of `MCPServer/` (today it's local + `cloudflared`, which changes URL on every
   restart) and documenting/provisioning `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` for real
