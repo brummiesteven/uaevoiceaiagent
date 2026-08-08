@@ -22,6 +22,11 @@ answer came from, and hands you to a human when it does not know.
 
 ## 2. Architecture
 
+![Architecture: Context.dev extracts government pages into one JSON contract, which feeds the Next.js pages, the ElevenLabs knowledge base and the MCP server; the ElevenLabs agent handles the call and emits a transcript; flagged failures become Linear issues that Devin fixes by PR, and merging re-syncs the live agent.](docs/architecture.svg)
+
+<details>
+<summary>Text version of the diagram</summary>
+
 ```
                     content/schema.ts  ← the data contract
                             │
@@ -44,6 +49,8 @@ answer came from, and hands you to a human when it does not know.
                               merge → GH Action → scripts/sync-agent.ts
                                               → ElevenLabs API + Vercel
 ```
+
+</details>
 
 ### The data path
 

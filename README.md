@@ -9,6 +9,8 @@ and ask a plain-language question — and closes the loop when the agent gets it
 **Live demo:** [FILL: Vercel URL]
 **Demo video:** [FILL: Loom link — set to "anyone with the link"]
 
+![Architecture: Context.dev extracts government pages into one JSON contract, which feeds the Next.js pages, the ElevenLabs knowledge base and the MCP server; the ElevenLabs agent handles the call and emits a transcript; flagged failures become Linear issues that Devin fixes by PR, and merging re-syncs the live agent.](docs/architecture.svg)
+
 ---
 
 ## What it does
