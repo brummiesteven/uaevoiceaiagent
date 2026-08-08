@@ -140,7 +140,7 @@ async function syncAgentConfig() {
   console.log("Agent config synced.");
 
   if (settings.tool_ids.length === 0) {
-    console.log("tool_ids is empty — skipping support-loop tool wiring (expected until D's file_issue webhook tool is registered and its ID known).");
+    console.log("tool_ids is empty — no webhook tools attached.");
   }
 }
 
@@ -160,7 +160,7 @@ async function syncKnowledgeBase() {
   for (const file of files) {
     const content = readFileSync(join(servicesDir, file), "utf-8");
     console.log(`Uploading ${file} to knowledge base...`);
-    await elevenlabsFetch(`/convai/knowledge-base`, {
+    await elevenlabsFetch(`/convai/knowledge-base/text`, {
       method: "POST",
       body: JSON.stringify({
         name: file.replace(/\.json$/, ""),
