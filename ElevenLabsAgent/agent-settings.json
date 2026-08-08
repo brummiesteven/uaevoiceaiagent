@@ -27,8 +27,8 @@
 
   "tts": {
     "model_id": "eleven_turbo_v2_5",
-    "voice_id": "[FILL: voice selected in dashboard]",
-    "_why": "eleven_turbo_v2_5 confirmed as a valid tts.model_id value against the update-agent API reference."
+    "voice_id": "",
+    "_why": "eleven_turbo_v2_5 confirmed as a valid tts.model_id value against the update-agent API reference. voice_id left empty on purpose (not a [FILL] placeholder) — sync-agent.ts's buildAgentPatch() already treats an empty string as 'omit this field', so syncing won't overwrite whatever voice was picked when the agent was created in the dashboard. Set an explicit voice_id here only once you deliberately want to change it from the dashboard default."
   },
 
   "turn": {
