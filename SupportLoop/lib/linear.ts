@@ -3,11 +3,30 @@ import { CallFeedback, TranscriptTurn } from "./types";
 
 const LINEAR_API = "https://api.linear.app/graphql";
 
+/**
+ * The escalation contract, in one constant.
+ *
+ * Devin is the first responder on every ticket. When it cannot resolve one it adds this
+ * label, and that is the whole signal — no extra service, no polling job, no state of our
+ * own to keep in sync. A human can add it by hand for the same effect. TECH-SPEC calls a
+ * ticket that Devin cannot resolve and that never reaches an engineer worse than no loop
+ * at all, so this is the one thing /triage sorts to the top and counts.
+ */
+export const ESCALATION_LABEL = "needs-engineer";
+
 export type LinearIssue = {
   id: string;
   identifier: string;
   url: string;
   assignee: string | null;
+  /**
+   * Whether the issue really ended up assigned to Devin. Read back from the created
+   * issue, never inferred from `assignee !== null` — Linear substitutes the API key's
+   * owner, so an issue nobody handed to Devin still comes back with a name on it.
+   */
+  devinAssigned: boolean;
+  /** Whether the @devin comment that triggers a session was posted. */
+  devinMentioned: boolean;
 };
 
 async function linearRequest<T>(query: string, variables: Record<string, unknown>): Promise<T> {
@@ -31,17 +50,54 @@ async function linearRequest<T>(query: string, variables: Record<string, unknown
 /**
  * The Linear→Devin handoff is an assignment: with the Devin integration installed,
  * assigning an issue to the Devin user starts a session. No glue code here.
+ *
+ * Returns null when Devin is not in the workspace, and the caller still files the ticket —
+ * an unassigned ticket a human can see beats a dropped report.
  */
-async function findDevinAssigneeId(): Promise<string | null> {
+export async function findDevinUserId(): Promise<string | null> {
   const override = optionalEnv("LINEAR_DEVIN_USER_ID");
   if (override) return override;
-  const data = await linearRequest<{ users: { nodes: { id: string; displayName: string }[] } }>(
-    `query { users(filter: { displayName: { containsIgnoreCase: "devin" } }, first: 5) {
-        nodes { id displayName }
-      } }`,
-    {},
-  );
-  return data.users.nodes[0]?.id ?? null;
+  if (!linearConfigured()) return null;
+  try {
+    const data = await linearRequest<{ users: { nodes: { id: string; displayName: string }[] } }>(
+      `query { users(filter: { displayName: { containsIgnoreCase: "devin" } }, first: 5) {
+          nodes { id displayName }
+        } }`,
+      {},
+    );
+    return data.users.nodes[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Wakes Devin up on an issue.
+ *
+ * Assignment alone is not enough and cannot be trusted: Linear accepts `assigneeId`
+ * pointing at the Devin OAuth app user, returns `success: true`, and then leaves the
+ * issue assigned to whoever owns the API key. Verified against this workspace — both
+ * `issueCreate` and a follow-up `issueUpdate` reported success and changed nothing.
+ * A comment that mentions Devin is the trigger that does survive the API, so both are
+ * attempted and the caller is told which one actually took.
+ */
+async function mentionDevin(issueId: string): Promise<boolean> {
+  try {
+    const data = await linearRequest<{ commentCreate: { success: boolean } }>(
+      `mutation Mention($input: CommentCreateInput!) {
+          commentCreate(input: $input) { success }
+        }`,
+      {
+        input: {
+          issueId,
+          body: "@devin please pick this up — details and scope are in the description above.",
+        },
+      },
+    );
+    return data.commentCreate.success;
+  } catch {
+    return false;
+  }
 }
 
 function renderTranscript(transcript: TranscriptTurn[] | null): string {
@@ -55,30 +111,32 @@ function renderTranscript(transcript: TranscriptTurn[] | null): string {
 
 export function issueBody(feedback: CallFeedback, appUrl: string | null): string {
   return [
-    "A caller flagged an answer from the voice agent as wrong or unhelpful.",
+    feedback.source === "voice"
+      ? "A caller raised this with the voice agent during a call. The agent took it down and filed it."
+      : "Someone reported this through the web form.",
     "",
-    "## Caller's note",
+    "## What the caller said",
     feedback.note,
     "",
-    `- Service: \`${feedback.serviceSlug ?? "unknown"}\``,
+    `- Topic: ${feedback.topic ? `\`${feedback.topic}\`` : "not captured"}`,
     `- Conversation id: \`${feedback.conversationId ?? "not captured"}\``,
-    `- Feedback row: \`${feedback.id}\``,
+    `- Report row: \`${feedback.id}\``,
     feedback.callerContact ? `- Caller contact: ${feedback.callerContact}` : null,
     appUrl ? `- Triage view: ${appUrl}/triage` : null,
     "",
     "## Transcript",
     renderTranscript(feedback.transcript),
     "",
-    "## Scope for the fix",
-    "Change one of these two files only:",
+    "## What to do with this",
+    "Devin is the first responder. Work the ticket as far as it goes, then either close it",
+    `or add the \`${ESCALATION_LABEL}\` label so a human engineer picks it up. Do not leave it`,
+    "open and unlabelled — a ticket nobody owns looks handled and isn't.",
     "",
-    "- `agent-config/prompt.md` — the answer was a behaviour problem (guessed instead of",
-    "  refusing, missing citation, wrong handoff).",
-    "- `content/services/<slug>.json` — the answer was a content problem (the scraped",
-    "  facts are wrong, missing or stale). Re-run `npm run scrape -- <slug>` where possible.",
+    "Bear in mind which component this actually belongs to before changing anything:",
     "",
-    "Do not change application code. Merging the PR runs `scripts/sync-agent.ts`, which",
-    "pushes the prompt and knowledge base to the live agent.",
+    "- The answer was wrong or the agent guessed → the agent prompt (`ElevenLabsAgent/`).",
+    "- The data was wrong, missing or stale → the MCP server and its sources (`MCPServer/`).",
+    "- The report itself did not reach anyone → this support loop (`SupportLoop/`).",
   ]
     .filter((line): line is string => line !== null)
     .join("\n");
@@ -89,9 +147,16 @@ export type LinearIssueState = {
   title: string;
   /** Workflow state name as configured on the team — "Todo", "In Progress", "Done". */
   state: string;
+  /** Linear's state category, which is stable across teams that rename their states. */
+  stateType: "triage" | "backlog" | "unstarted" | "started" | "completed" | "canceled" | string;
+  /** Devin (or a human) could not resolve this and flagged it for an engineer. */
+  escalated: boolean;
   /** Links Devin attaches to the issue as it works: the branch, then the pull request. */
   links: { title: string; url: string }[];
 };
+
+export const isClosed = (issue: LinearIssueState) =>
+  issue.stateType === "completed" || issue.stateType === "canceled";
 
 /**
  * Reads the current state of issues we already created, for /triage.
@@ -115,7 +180,8 @@ export async function fetchIssueStates(ids: string[]): Promise<Map<string, Linea
           id: string;
           identifier: string;
           title: string;
-          state: { name: string } | null;
+          state: { name: string; type: string } | null;
+          labels: { nodes: { name: string }[] };
           attachments: { nodes: { title: string | null; url: string }[] };
         }[];
       };
@@ -124,7 +190,8 @@ export async function fetchIssueStates(ids: string[]): Promise<Map<string, Linea
           issues(filter: { id: { in: $ids } }, first: 100) {
             nodes {
               id identifier title
-              state { name }
+              state { name type }
+              labels(first: 20) { nodes { name } }
               attachments(first: 10) { nodes { title url } }
             }
           }
@@ -136,6 +203,10 @@ export async function fetchIssueStates(ids: string[]): Promise<Map<string, Linea
         identifier: issue.identifier,
         title: issue.title,
         state: issue.state?.name ?? "Unknown",
+        stateType: issue.state?.type ?? "unknown",
+        escalated: issue.labels.nodes.some(
+          (label) => label.name.toLowerCase() === ESCALATION_LABEL,
+        ),
         links: issue.attachments.nodes.map((a) => ({ title: a.title ?? a.url, url: a.url })),
       });
     }
@@ -152,10 +223,8 @@ export async function createIssueForFeedback(
   appUrl: string | null,
 ): Promise<LinearIssue> {
   if (!linearConfigured()) throw new Error("Linear is not configured");
-  const assigneeId = await findDevinAssigneeId();
-  const title = `Voice agent gave a bad answer${
-    feedback.serviceSlug ? ` — ${feedback.serviceSlug}` : ""
-  }`;
+  const assigneeId = await findDevinUserId();
+  const title = `Caller report${feedback.topic ? ` — ${feedback.topic}` : ""}`;
   const data = await linearRequest<{
     issueCreate: {
       success: boolean;
@@ -163,14 +232,14 @@ export async function createIssueForFeedback(
         id: string;
         identifier: string;
         url: string;
-        assignee: { displayName: string } | null;
+        assignee: { id: string; displayName: string } | null;
       } | null;
     };
   }>(
     `mutation CreateIssue($input: IssueCreateInput!) {
         issueCreate(input: $input) {
           success
-          issue { id identifier url assignee { displayName } }
+          issue { id identifier url assignee { id displayName } }
         }
       }`,
     {
@@ -189,5 +258,7 @@ export async function createIssueForFeedback(
     identifier: issue.identifier,
     url: issue.url,
     assignee: issue.assignee?.displayName ?? null,
+    devinAssigned: Boolean(assigneeId) && issue.assignee?.id === assigneeId,
+    devinMentioned: assigneeId ? await mentionDevin(issue.id) : false,
   };
 }

@@ -1,5 +1,12 @@
 export type FeedbackStatus = "new" | "ticketed" | "resolved";
 
+/**
+ * Where the report came in from. The agent path is the one the architecture calls for —
+ * the caller never leaves the call. The web form is a fallback for anyone who could not
+ * finish the call, and it is the only path that exists before the agent is wired up.
+ */
+export type FeedbackSource = "voice" | "web";
+
 export type TranscriptTurn = {
   role: "agent" | "user";
   message: string;
@@ -9,7 +16,9 @@ export type TranscriptTurn = {
 export type CallFeedback = {
   id: string;
   createdAt: string;
-  serviceSlug: string | null;
+  source: FeedbackSource;
+  /** What the caller was asking about, in the agent's words. Free text, not a slug. */
+  topic: string | null;
   conversationId: string | null;
   note: string;
   callerContact: string | null;

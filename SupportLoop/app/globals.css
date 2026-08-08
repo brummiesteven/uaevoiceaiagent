@@ -137,6 +137,22 @@ a {
   margin: 1.25rem 0;
 }
 
+/* The escalation banner is always present so its absence is never ambiguous. It reads
+   calm when nothing is waiting and raises to the warning palette when something is —
+   with the count in words, since colour alone cannot carry it. */
+.banner {
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  margin: 1.25rem 0;
+}
+
+.banner[data-kind="attention"] {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+
 .muted {
   color: var(--muted);
 }

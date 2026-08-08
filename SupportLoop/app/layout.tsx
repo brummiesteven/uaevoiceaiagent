@@ -3,9 +3,9 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Voice access to UAE government services",
+  title: "Support loop — UAE voice agent",
   description:
-    "Ask a plain-language question about a UAE government service and get an answer read aloud, with the source it came from.",
+    "Where a caller's report goes after the voice agent files it: a ticket, a coding agent, and an escalation to a human engineer when that is not enough.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -17,8 +17,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </a>
         <header className="site-header">
           <nav aria-label="Main">
-            <Link href="/">Services</Link>
-            <Link href="/triage">Flagged calls</Link>
+            <Link href="/">How it works</Link>
+            <Link href="/triage">Reports</Link>
+            <Link href="/report">Report a problem</Link>
           </nav>
         </header>
         <main id="main">{children}</main>

@@ -22,3 +22,6 @@ export const linearConfigured = () =>
   Boolean(optionalEnv("LINEAR_API_KEY") && optionalEnv("LINEAR_TEAM_ID"));
 
 export const webhookSecretConfigured = () => Boolean(optionalEnv("ELEVENLABS_WEBHOOK_SECRET"));
+
+/** Shared secret the agent presents when it files a ticket. See app/api/agent/ticket. */
+export const agentSecretConfigured = () => Boolean(optionalEnv("SUPPORT_AGENT_SECRET"));

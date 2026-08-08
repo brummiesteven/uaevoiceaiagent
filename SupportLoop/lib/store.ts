@@ -1,17 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { getSupabase } from "./supabase";
-import { CallFeedback, Ticket, TranscriptTurn, TriageRow } from "./types";
+import { CallFeedback, FeedbackSource, Ticket, TranscriptTurn, TriageRow } from "./types";
 
 /**
  * Supabase is the store. When it is not configured the same API falls back to
- * process memory so the feedback form and /triage still work locally — the
+ * process memory so the report path and /triage still work locally — the
  * fallback is per-process and is lost on restart.
  */
 
 type FeedbackRow = {
   id: string;
   created_at: string;
-  service_slug: string | null;
+  source: FeedbackSource;
+  topic: string | null;
   conversation_id: string | null;
   note: string;
   caller_contact: string | null;
@@ -35,7 +36,7 @@ type Memory = { feedback: FeedbackRow[]; tickets: TicketRow[] };
 
 /**
  * On globalThis, not a module constant: each route gets its own module instance in
- * the dev server, so a module-level array would give the webhook and the form
+ * the dev server, so a module-level array would give the webhook and the ticket route
  * separate stores and the transcript join would silently never match.
  */
 const memory: Memory = ((globalThis as { __feedbackMemory?: Memory }).__feedbackMemory ??= {
@@ -50,7 +51,8 @@ export function storeBackend(): "supabase" | "memory" {
 const toFeedback = (r: FeedbackRow): CallFeedback => ({
   id: r.id,
   createdAt: r.created_at,
-  serviceSlug: r.service_slug,
+  source: r.source,
+  topic: r.topic,
   conversationId: r.conversation_id,
   note: r.note,
   callerContact: r.caller_contact,
@@ -71,7 +73,8 @@ const toTicket = (r: TicketRow): Ticket => ({
 });
 
 export async function insertFeedback(input: {
-  serviceSlug: string | null;
+  source: FeedbackSource;
+  topic: string | null;
   conversationId: string | null;
   note: string;
   callerContact: string | null;
@@ -80,7 +83,8 @@ export async function insertFeedback(input: {
   const row: FeedbackRow = {
     id: randomUUID(),
     created_at: new Date().toISOString(),
-    service_slug: input.serviceSlug,
+    source: input.source,
+    topic: input.topic,
     conversation_id: input.conversationId,
     note: input.note,
     caller_contact: input.callerContact,
@@ -95,7 +99,8 @@ export async function insertFeedback(input: {
   const { data, error } = await supabase
     .from("call_feedback")
     .insert({
-      service_slug: row.service_slug,
+      source: row.source,
+      topic: row.topic,
       conversation_id: row.conversation_id,
       note: row.note,
       caller_contact: row.caller_contact,
@@ -168,6 +173,25 @@ export async function insertTicket(input: {
   if (error) throw new Error(`Supabase insert into tickets failed: ${error.message}`);
   await supabase.from("call_feedback").update({ status: "ticketed" }).eq("id", input.feedbackId);
   return toTicket(data as TicketRow);
+}
+
+/**
+ * Marks reports whose Linear issue has closed. Called by /triage after it reads Linear,
+ * so the stored status follows Linear rather than trying to lead it — Linear is where a
+ * human or Devin actually closes the work.
+ */
+export async function markResolved(feedbackIds: string[]): Promise<void> {
+  if (feedbackIds.length === 0) return;
+  const supabase = getSupabase();
+  if (!supabase) {
+    for (const f of memory.feedback) if (feedbackIds.includes(f.id)) f.status = "resolved";
+    return;
+  }
+  await supabase
+    .from("call_feedback")
+    .update({ status: "resolved" })
+    .in("id", feedbackIds)
+    .neq("status", "resolved");
 }
 
 export async function listTriage(limit = 50): Promise<TriageRow[]> {

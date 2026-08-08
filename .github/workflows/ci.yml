@@ -6,16 +6,21 @@ on:
   pull_request:
 
 jobs:
-  check:
+  support-loop:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SupportLoop
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: SupportLoop/package-lock.json
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
-      # The agent payload is checked in sync-agent.yml, which owns that surface.
+      # Pure-logic checks on the ticket/escalation rules. No network, no secrets.
+      - run: npm test
