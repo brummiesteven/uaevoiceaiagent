@@ -1,0 +1,54 @@
+{
+  "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; sync-agent.ts PATCHes it to match this file on every push to main. Field names verified against https://elevenlabs.io/docs/api-reference/agents/update — see notes below on the one item that still needs live-account confirmation.",
+
+  "first_message": {
+    "default": "Hello! You've reached Dubai's information line. I can help with living here — utility bills, getting around, accessible services and permits, or anything the city publishes data on. What can I help you with?",
+    "_why": "Agent-level fallback for direct/dashboard testing where no session-start override is passed. Real per-call variety comes from the UI picking randomly from intros.json and passing it as a conversation_config_override.agent.first_message (or Conversation.startSession({ overrides }) in the JS SDK) — see intros.json. This default is intros.json's first entry — C's exact tested first_message, verified working end to end against the real MCP server."
+  },
+
+  "language": {
+    "mode": "multi",
+    "primary": "en",
+    "additional": ["ar"],
+    "_why": "Speaker in the architecture diagram is explicitly English + Arabic. Auto-detect/multi-language over locking to English-only, since misdetecting an Arabic-accented English caller as needing translation (or vice versa) is worse than the small added latency."
+  },
+
+  "asr": {
+    "provider": "scribe_realtime",
+    "quality": "high",
+    "_why": "ElevenLabs' native real-time Scribe ASR — no custom/bolted-on STT layer, per TECH-SPEC's decision to avoid an extra round-trip inside the real-time loop. 'scribe_realtime' is the current provider value; the older 'elevenlabs' provider is being deprecated in favour of it."
+  },
+
+  "llm": {
+    "model": "claude-sonnet-5",
+    "temperature": 0.3,
+    "_why": "C tested this against the real MCP server: gemini-2.0-flash (the old placeholder here) did not reliably call tools, and when it skipped them it fabricated a confident but wrong Dubai population figure instead of admitting it didn't know. claude-sonnet-5 called tools reliably. Temperature 0.3 is the middle of C's recommended 0.1-0.4 range for factual/government data — creative variation here produces wrong numbers, not charm."
+  },
+
+  "tts": {
+    "model_id": "eleven_turbo_v2_5",
+    "voice_id": "[FILL: voice selected in dashboard]",
+    "_why": "eleven_turbo_v2_5 confirmed as a valid tts.model_id value against the update-agent API reference."
+  },
+
+  "turn": {
+    "turn_timeout": 10,
+    "turn_eagerness": "patient",
+    "turn_model": "turn_v3",
+    "_why": "Non-native/accented speakers pause mid-sentence more than the defaults assume (turn_timeout default is 7s). 'patient' eagerness plus a slightly longer timeout avoids cutting callers off mid-thought — same intent as the earlier 'low interruption sensitivity' idea, using the real field names this time. Tune further against A's real questions once available."
+  },
+
+  "pronunciation_dictionary": [],
+  "_pronunciation_dictionary_note": "Populate with UAE service/entity names once A's content/schema.ts and content/services/*.json land — generic ASR will mangle these.",
+
+  "system_tools": {
+    "language_detection": true,
+    "_why": "Required for the agent to switch its spoken response language mid-call when the caller switches languages — multi-language mode alone only picks the language at call start. This system tool is NOT on by default even with language.mode = multi.",
+    "_json_placement_unconfirmed": "Two doc sources disagreed on where this goes in the actual PATCH body: agent.prompt.built_in_tools vs. an entry {\"type\": \"system\", \"name\": \"language_detection\"} inside agent.prompt.tools. sync-agent.ts currently emits the 'tools array' shape as the best-supported guess — verify against a GET on the real agent once one exists and correct if wrong."
+  },
+
+  "_mcp_note": "MCP server registration is intentionally NOT configured here. C's MCP server (MCPServer/) has no stable URL yet (local + cloudflared tunnel, URL changes every restart), and MCPServer/scripts/reconnect.js already owns registering it and attaching it to the agent via mcp_server_ids on every reconnect. sync-agent.ts deliberately never touches that field — see its buildAgentPatch() comment. Run reconnect.js after starting the tunnel; don't add mcp_server_ids here.",
+
+  "tool_ids": [],
+  "_tool_ids_note": "Holds the ID of the file_issue webhook tool resource (see prompt.md's 'Filing an issue' section) once D's ticket webhook exists and the tool is registered with ElevenLabs. This is an ID reference, not an inline tool definition."
+}
