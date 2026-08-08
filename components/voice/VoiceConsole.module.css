@@ -27,6 +27,35 @@
   color: var(--teal);
 }
 
+.statusText[data-loading="true"] {
+  animation: pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusText[data-loading="true"] {
+    animation: none;
+  }
+}
+
+.bigText {
+  max-width: 30rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink);
+  margin: 0;
+}
+
 .stage {
   display: flex;
   flex-direction: column;

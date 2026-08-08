@@ -18,8 +18,14 @@ export function VoiceConsole({ service }: { service: ServiceRecord }) {
   // so pressing it doesn't require re-reading a label that just changed.
   const label = isBusy ? "Press to stop" : "Press to talk";
 
-  const statusText =
-    call.state === "connecting"
+  // The connection can go "connected" before the agent's opening line has
+  // actually arrived — without this, status jumps straight to "Listening…"
+  // while the caller is still waiting to hear anything.
+  const awaitingFirstMessage = isBusy && call.turns.length === 0;
+
+  const statusText = awaitingFirstMessage
+    ? "Loading…"
+    : call.state === "connecting"
       ? "Connecting…"
       : call.state === "active"
         ? call.isSpeaking
@@ -27,12 +33,15 @@ export function VoiceConsole({ service }: { service: ServiceRecord }) {
           : "Listening…"
         : null;
 
+  const latestAgentTurn = [...call.turns].reverse().find((turn) => turn.speaker === "agent");
+
   const announcement = useMemo(() => {
     if (call.state === "error") return call.error ?? "Something went wrong with the call.";
+    if (awaitingFirstMessage) return "Loading.";
     if (call.state === "connecting") return "Connecting your call.";
     if (call.state === "active") return call.isSpeaking ? "Agent is speaking." : "Listening.";
     return "Ready. Press the circle to talk.";
-  }, [call.state, call.isSpeaking, call.error]);
+  }, [call.state, call.isSpeaking, call.error, awaitingFirstMessage]);
 
   function handleToggle() {
     if (isBusy) {
@@ -62,9 +71,13 @@ export function VoiceConsole({ service }: { service: ServiceRecord }) {
         />
 
         {statusText && (
-          <p className={styles.statusText} data-speaking={call.isSpeaking}>
+          <p className={styles.statusText} data-loading={awaitingFirstMessage} data-speaking={call.isSpeaking}>
             {statusText}
           </p>
+        )}
+
+        {!awaitingFirstMessage && latestAgentTurn && isBusy && (
+          <p className={styles.bigText}>{latestAgentTurn.text}</p>
         )}
 
         {call.state === "error" && (
