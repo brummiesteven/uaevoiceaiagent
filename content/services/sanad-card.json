@@ -1,0 +1,36 @@
+{
+  "slug": "sanad-card",
+  "name": "Sanad Card",
+  "publisher": "Ministry of Community Empowerment (placeholder)",
+  "summary": "The Sanad Card confirms your registered support needs so typing centres, clinics and government service counters can adjust how they serve you without asking you to re-explain each time.",
+  "whoQualifies": [
+    "UAE nationals and residents with a registered determination (disability) assessment",
+    "Guardians applying on behalf of a person of determination they represent"
+  ],
+  "documentsRequired": [
+    "Emirates ID",
+    "Determination (disability) assessment letter from an approved medical centre",
+    "Passport-size photo",
+    "Guardian's Emirates ID and proof of guardianship, if applying on someone's behalf"
+  ],
+  "fees": [
+    { "item": "New card", "amount": "AED 50 (placeholder)" },
+    { "item": "Replacement card", "amount": "AED 30 (placeholder)" }
+  ],
+  "processingTime": "5 to 7 working days from a complete application (placeholder)",
+  "howToApply": [
+    "Book an appointment at a Sanad typing centre or apply online",
+    "Bring the required documents to your appointment",
+    "Complete the biometric capture if requested",
+    "Collect the card or have it delivered to your registered address"
+  ],
+  "sourceUrl": "https://example.gov.ae/services/sanad-card",
+  "lastScrapedAt": "2026-08-01",
+  "exampleQuestions": [
+    "What documents do I need for a Sanad Card?",
+    "Do I qualify for a Sanad Card?",
+    "How much does a Sanad Card cost?",
+    "How long does it take to get one?"
+  ],
+  "fixture": true
+}

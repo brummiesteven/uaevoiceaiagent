@@ -1,0 +1,51 @@
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.fixtureBanner {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border: 2px solid var(--error);
+  border-radius: var(--radius-sm);
+  background: var(--error-soft);
+  color: var(--error);
+  font-weight: 700;
+  font-size: 0.9rem;
+  max-width: none;
+}
+
+[data-contrast="high"] .fixtureBanner {
+  color: var(--ink);
+}
+
+.summary {
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.processingTime {
+  margin-top: 0.75em;
+}
+
+.citationFooter {
+  border-top: 2px solid var(--line);
+  padding-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.citationFooter p {
+  margin: 0 0 0.3em;
+  max-width: none;
+}
