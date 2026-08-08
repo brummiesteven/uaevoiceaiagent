@@ -75,15 +75,18 @@ User (speaks/writes an issue — mid-call or at the end of the call)
 ElevenLabs Agent  — takes down the issue, calls a webhook tool (outside MCP)
         │
         ▼
-Ticket database  — a ticket row is written
+Ticket database  — a ticket row is written, before anything else can fail
         │
         ▼
-Linear issue  — created from the ticket, assigned to Devin
+Linear issue  — created from the ticket, Devin mentioned to start a session
         │
         ▼
 Devin (Cognition)  — works the ticket
-   ├─ resolved → ticket closed
-   └─ can't resolve → flagged: engineer needed
+   ├─ resolved → issue closed → the report closes with it
+   └─ can't resolve → labels it `needs-engineer`
+                          │
+                          ▼
+                   Linear webhook → Slack — a named human is now on the hook
 ```
 
 This is **not** an MCP tool call. MCP tools exist to answer the caller's question from
@@ -101,6 +104,17 @@ webhook endpoint exists.
 Devin is the first responder on every ticket. Devin resolves what it can; anything it
 cannot resolve is flagged so a human engineer picks it up — tickets should not sit
 unowned.
+
+The flag is the `needs-engineer` label in Linear, and that is the whole escalation
+contract: no extra service, no polling job, no state of our own to keep in sync, and a
+human can raise it by hand for the same effect. A Linear webhook turns the label into a
+Slack message the moment it lands, which is what stops the flag from depending on someone
+happening to open `/triage`. Nothing else pings Slack — a channel that fires on every
+caller report gets muted, and a muted channel loses the escalations too.
+
+The order matters: the report row is written before Linear is called, and returned even if
+Linear fails. Losing a report to an integration outage is the one failure this loop exists
+to prevent.
 
 ---
 
@@ -134,6 +148,16 @@ path from a caller's complaint to a fix.
 
 ## 5. What is real vs. what is v2
 
+**Real, running, and verified end to end (D — support loop):** the agent webhook that
+files a report, Supabase persistence, Linear issue creation, the `@devin` mention that
+starts a session, the post-call transcript join, the `/triage` audit trail reading Linear
+state live, the web fallback form, and the `needs-engineer` → Slack escalation. Devin has
+picked up a ticket filed through this path and replied on it.
+
+**v2 (D):** attaching Devin's pull request back onto the report automatically — currently
+read from Linear attachments on page load — and telling the caller when their ticket
+closes. Nothing writes back to the person who reported it.
+
 - [FILL: update as the agent, MCP server, and data source land]
 
 ---
@@ -146,6 +170,13 @@ path from a caller's complaint to a fix.
 - **Data can go stale** depending on how the data source (A) is refreshed — no automatic
   refresh is assumed here; see A's docs once they land.
 - **A ticket that Devin can't resolve and that never reaches an engineer is worse than no
-  loop at all** — it looks handled but isn't. The escalation flag only helps if someone is
-  actually watching for it; who that is isn't decided yet.
+  loop at all** — it looks handled but isn't. Closed by pushing the `needs-engineer` label
+  to Slack rather than waiting for someone to open `/triage`. The residual risk is the
+  Slack webhook failing silently; `/triage` still lists escalations first as the backstop,
+  and a missing `SLACK_WEBHOOK_URL` is called out on the page.
+- **Linear will not assign an issue to the Devin app user** — it accepts `assigneeId`,
+  returns success, and leaves the issue with whoever owns the API key. Mentioning `@devin`
+  in a comment is what actually starts a session, so the handoff is verified by reading the
+  result back rather than trusting the mutation. Left unchecked this is the failure mode
+  where the whole loop looks green and reaches nobody.
 - [FILL: any scope/authorisation notes once the data source is confirmed]
