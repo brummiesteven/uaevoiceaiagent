@@ -1,8 +1,22 @@
-# UAE Voice Agent
+# AlHammadi
 
-Voice access to UAE government/open data. A caller speaks to an ElevenLabs voice agent,
-which is the single decision-maker in the system: it decides what to look up, calls the
-right tool on the MCP server, gets the data back, and speaks the answer.
+Voice access to UAE government/open data, for people who find a phone call easier than a
+website. A caller speaks to an ElevenLabs voice agent, which is the single decision-maker
+in the system: it decides what to look up, calls the right tool on the MCP server, gets
+the data back, and speaks the answer.
+
+## The name
+
+Named in honour of **Mohamed Al Hammadi**, the Emirati wheelchair racer who won the UAE's
+first Paralympic athletics gold in the 800m T34 at Rio 2016, and who also took medals at
+London 2012 and Tokyo.
+
+Many of the people this is built for are People of Determination — someone who is blind
+or low-vision, has a motor impairment that makes forms difficult, or simply finds speaking
+easier than reading a dense government page. The name is a reminder of who the work is for.
+
+The name is a tribute. Mohamed Al Hammadi has no involvement in this project and has not
+endorsed it.
 
 ## How it works
 

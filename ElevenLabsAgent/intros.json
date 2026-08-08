@@ -1,0 +1,18 @@
+{
+  "_comment": "10 varied opening greetings, for UI-side rotation on session start. Not consumed by sync-agent.ts — the ElevenLabs agent-level config only holds one static first_message, so true per-call variety has to come from the caller (UI). Pick one at random and pass it as a session-start override.",
+  "_how_to_use": "JS SDK: Conversation.startSession({ overrides: { agent: { firstMessage: pickRandom(intros) } } }). Widget: override-first-message=\"...\" attribute. Requires overrides to be enabled in the agent's Security settings in the ElevenLabs dashboard, or the override is silently ignored.",
+  "_why": "first_message is spoken immediately at call start, before the caller says anything — it's what keeps the caller from sitting in silence while the session spins up. Rotating it avoids every caller hearing an identical scripted opener, which reads as more natural on repeat/demo use.",
+  "_tone_note": "Keep additions short, plain, and low-pressure — matches prompt.md's Noor persona and C's tested tone. Scope is Dubai's information line specifically (open data, statistics, DEWA tariffs, accessibility services), not generic 'UAE services' — entry 1 is C's exact tested first_message from MCPServer/agent-prompt.md, verified working end to end; the rest are new variants in the same voice and scope.",
+  "intros": [
+    "Hello! You've reached Dubai's information line. I can help with living here — utility bills, getting around, accessible services and permits, or anything the city publishes data on. What can I help you with?",
+    "Hi, this is Dubai's information line — I can help with bills, getting around, or anything the city has data on. What's going on?",
+    "Hello there! I'm here to help with day-to-day life in Dubai — costs, services, accessibility, you name it. What can I look into for you?",
+    "Hi! Ask me anything about living in Dubai — utilities, getting around, or what the city publishes data on. What's on your mind?",
+    "Hello, I can help with Dubai services and data — bills, accessibility, getting around. What would you like to know?",
+    "Hi there — I cover Dubai living: costs, services, accessible transport, city data. What can I help with today?",
+    "Welcome to Dubai's information line. Bills, getting around, accessibility, city data — what brings you here today?",
+    "Hi, I'm listening. Whether it's a utility bill, an accessible service, or something the city tracks — what do you need?",
+    "Hello there, I can help with anything Dubai publishes on — costs, services, getting around. What can I sort out for you?",
+    "Hi — feel free to ask me about living in Dubai, from bills to accessible services to what the city's data says."
+  ]
+}
