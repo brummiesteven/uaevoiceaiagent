@@ -48,13 +48,15 @@ async function elevenlabsFetch(path: string, init: RequestInit) {
 
 type AgentSettings = {
   language: { mode: string; primary: string; additional: string[] };
-  asr: { model: string };
+  asr: { provider: string; quality: string };
   llm: { model: string };
-  tts: { model: string; voice_id: string };
-  turn_taking: { interruption_sensitivity: string; silence_end_call_timeout_ms: number };
+  tts: { model_id: string; voice_id: string };
+  turn: { turn_timeout: number; turn_eagerness: string; turn_model: string };
   pronunciation_dictionary: unknown[];
-  mcp_tools: unknown[];
-  webhook_tools: unknown[];
+  system_tools: { language_detection: boolean };
+  mcp_server_ids: unknown[];
+  native_mcp_server_ids: unknown[];
+  tool_ids: unknown[];
 };
 
 function loadPrompt(): string {
@@ -68,41 +70,51 @@ function loadSettings(): AgentSettings {
 
 /**
  * Builds the ElevenLabs agent PATCH payload from our config files.
- * Field names follow the Conversational AI "agent" object shape — verify against
- * current ElevenLabs API docs before first real sync, the API surface moves.
+ * Field names verified against https://elevenlabs.io/docs/api-reference/agents/update
+ * as of this writing (asr.provider, turn.turn_timeout/turn_eagerness/turn_model,
+ * agent.prompt.tool_ids/native_mcp_server_ids/mcp_server_ids). The API surface moves —
+ * re-check before trusting this blindly on a real sync.
+ *
+ * One field is NOT confirmed: where language_detection goes. Two doc sources
+ * disagreed (agent.prompt.built_in_tools vs. an entry inside agent.prompt.tools
+ * shaped {type: "system", name: "language_detection"}). This emits the "tools array"
+ * shape as the best-supported guess — verify with a GET on the real agent once one
+ * exists, and fix here if wrong.
  */
 function buildAgentPatch(prompt: string, settings: AgentSettings) {
-  const platformSettings: Record<string, unknown> = {};
-  // MCP tool wiring is intentionally a no-op until settings.mcp_tools is populated —
-  // see ElevenLabsAgent/agent-settings.json's mcp_tools note.
-  if (settings.mcp_tools.length > 0) platformSettings.mcp_servers = settings.mcp_tools;
-  // Webhook tools (e.g. file_issue — the support-loop tool, separate from MCP) are
-  // also intentionally a no-op until D's ticket webhook exists and settings.webhook_tools
-  // is populated. Field name/shape is a placeholder — verify against the ElevenLabs
-  // API's client tool / webhook tool schema before first real sync.
-  if (settings.webhook_tools.length > 0) platformSettings.webhook_tools = settings.webhook_tools;
+  const promptConfig: Record<string, unknown> = {
+    prompt,
+    llm: settings.llm.model,
+  };
+  // Tool/MCP-server wiring is intentionally a no-op until these ID lists are populated —
+  // see agent-settings.json's notes. Each holds resource IDs, not inline definitions.
+  if (settings.tool_ids.length > 0) promptConfig.tool_ids = settings.tool_ids;
+  if (settings.native_mcp_server_ids.length > 0) promptConfig.native_mcp_server_ids = settings.native_mcp_server_ids;
+  if (settings.mcp_server_ids.length > 0) promptConfig.mcp_server_ids = settings.mcp_server_ids;
+  if (settings.system_tools.language_detection) {
+    promptConfig.tools = [{ type: "system", name: "language_detection" }];
+  }
 
   return {
     conversation_config: {
       agent: {
-        prompt: {
-          prompt,
-          llm: settings.llm.model,
-        },
+        prompt: promptConfig,
         language: settings.language.primary,
       },
       asr: {
-        model: settings.asr.model,
+        provider: settings.asr.provider,
+        quality: settings.asr.quality,
       },
       tts: {
-        model_id: settings.tts.model,
+        model_id: settings.tts.model_id,
         voice_id: settings.tts.voice_id || undefined,
       },
       turn: {
-        interruption_sensitivity: settings.turn_taking.interruption_sensitivity,
+        turn_timeout: settings.turn.turn_timeout,
+        turn_eagerness: settings.turn.turn_eagerness,
+        turn_model: settings.turn.turn_model,
       },
     },
-    ...(Object.keys(platformSettings).length > 0 ? { platform_settings: platformSettings } : {}),
   };
 }
 
@@ -118,11 +130,11 @@ async function syncAgentConfig() {
   });
   console.log("Agent config synced.");
 
-  if (settings.mcp_tools.length === 0) {
-    console.log("mcp_tools is empty — skipping MCP tool wiring (expected until C's server is live).");
+  if (settings.mcp_server_ids.length === 0 && settings.native_mcp_server_ids.length === 0) {
+    console.log("mcp_server_ids / native_mcp_server_ids are empty — skipping MCP wiring (expected until C's server is registered and its ID known).");
   }
-  if (settings.webhook_tools.length === 0) {
-    console.log("webhook_tools is empty — skipping support-loop tool wiring (expected until D's ticket webhook is live).");
+  if (settings.tool_ids.length === 0) {
+    console.log("tool_ids is empty — skipping support-loop tool wiring (expected until D's file_issue webhook tool is registered and its ID known).");
   }
 }
 
