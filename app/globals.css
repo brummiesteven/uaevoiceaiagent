@@ -264,6 +264,17 @@ details.transcript summary {
   font-weight: 600;
 }
 
+/* The live transcript grows for the length of the call. Box and scroll it so the
+   feedback form underneath does not walk off the bottom of the screen. */
+div.transcript {
+  max-height: 22rem;
+  overflow-y: auto;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 .transcript-turn {
   margin: 0 0 0.6rem;
 }
