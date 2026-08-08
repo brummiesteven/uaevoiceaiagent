@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="640" viewBox="0 0 980 640" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="700" viewBox="0 0 980 700" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
   <defs>
     <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
@@ -6,12 +6,15 @@
     <marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#b45309"/>
     </marker>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/>
+    </marker>
   </defs>
 
-  <rect x="0" y="0" width="980" height="640" fill="#ffffff"/>
+  <rect x="0" y="0" width="980" height="700" fill="#ffffff"/>
 
   <text x="40" y="42" font-size="19" font-weight="600" fill="#0f172a">Architecture — two flows, one agent</text>
-  <text x="40" y="64" font-size="12" fill="#64748b">Left: the data-query flow. Right: the support loop — a separate path, not an MCP tool.</text>
+  <text x="40" y="64" font-size="12" fill="#64748b">Left: the data-query flow, and the Context.dev capture that feeds it before any call. Right: the support loop — a separate path, not an MCP tool.</text>
 
   <!-- User -->
   <rect x="185" y="96" width="250" height="58" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
@@ -43,13 +46,20 @@
   <text x="310" y="448" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">Data source</text>
   <text x="310" y="466" font-size="11" fill="#475569" text-anchor="middle">owner: A</text>
 
+  <!-- capture lane — off the call path -->
+  <path d="M310,510 V486" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#ac)"/>
+  <rect x="150" y="510" width="320" height="58" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="310" y="532" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Context.dev — capture time only</text>
+  <text x="310" y="549" font-size="10.5" fill="#475569" text-anchor="middle">rendered pages → committed JSON, loaded at boot</text>
+  <text x="310" y="563" font-size="10.5" fill="#7c3aed" text-anchor="middle">never called during a call</text>
+
   <!-- return path -->
   <path d="M470,453 H500 V225 H480" fill="none" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#ar)"/>
   <text x="518" y="340" font-size="10.5" fill="#64748b" transform="rotate(90 518 340)">result flows back through MCP to the agent</text>
 
-  <text x="40" y="560" font-size="12" font-weight="600" fill="#0f172a">No orchestration layer between the agent and MCP.</text>
-  <text x="40" y="580" font-size="11" fill="#64748b">The agent calls MCP tools directly — an extra hop here adds a round-trip inside a</text>
-  <text x="40" y="596" font-size="11" fill="#64748b">real-time voice loop, and conversation quality degrades past ~800ms of dead air.</text>
+  <text x="40" y="612" font-size="12" font-weight="600" fill="#0f172a">No orchestration layer between the agent and MCP.</text>
+  <text x="40" y="632" font-size="11" fill="#64748b">The agent calls MCP tools directly — an extra hop here adds a round-trip inside a</text>
+  <text x="40" y="648" font-size="11" fill="#64748b">real-time voice loop, and conversation quality degrades past ~800ms of dead air.</text>
 
   <!-- branch to support loop -->
   <path d="M480,234 H620" fill="none" stroke="#b45309" stroke-width="1.6" marker-end="url(#am)"/>
@@ -66,7 +76,7 @@
   <!-- Linear -->
   <rect x="620" y="314" width="320" height="68" rx="8" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
   <text x="780" y="342" font-size="15" font-weight="600" fill="#0f172a" text-anchor="middle">Linear issue</text>
-  <text x="780" y="360" font-size="11" fill="#475569" text-anchor="middle">created from the ticket, assigned to Devin</text>
+  <text x="780" y="360" font-size="11" fill="#475569" text-anchor="middle">created from the ticket, @devin mentioned in a comment</text>
 
   <path d="M780,382 V424" fill="none" stroke="#b45309" stroke-width="1.6" marker-end="url(#am)"/>
 
@@ -74,9 +84,16 @@
   <rect x="620" y="424" width="320" height="76" rx="8" fill="#fffbeb" stroke="#b45309" stroke-width="2.5"/>
   <text x="780" y="450" font-size="15" font-weight="600" fill="#0f172a" text-anchor="middle">Devin (Cognition)</text>
   <text x="780" y="468" font-size="11" fill="#475569" text-anchor="middle">resolved → ticket closed</text>
-  <text x="780" y="486" font-size="11" fill="#475569" text-anchor="middle">can't resolve → flagged: engineer needed</text>
+  <text x="780" y="486" font-size="11" fill="#475569" text-anchor="middle">can't resolve → labels it needs-engineer</text>
 
-  <text x="620" y="524" font-size="11" font-weight="600" fill="#0f172a">Deliberately not an MCP tool.</text>
-  <text x="620" y="542" font-size="10.5" fill="#64748b">Filing an issue isn't a data lookup and isn't latency-bound the same way —</text>
-  <text x="620" y="558" font-size="10.5" fill="#64748b">keeping it a separate path avoids conflating "no data" with "the agent failed you."</text>
+  <text x="620" y="612" font-size="11" font-weight="600" fill="#0f172a">Deliberately not an MCP tool.</text>
+  <text x="620" y="632" font-size="10.5" fill="#64748b">Filing an issue isn't a data lookup and isn't latency-bound the same way —</text>
+  <text x="620" y="648" font-size="10.5" fill="#64748b">keeping it a separate path avoids conflating "no data" with "the agent failed you."</text>
+
+  <!-- Slack escalation -->
+  <path d="M780,500 V510" fill="none" stroke="#b45309" stroke-width="1.6" marker-end="url(#am)"/>
+  <rect x="620" y="510" width="320" height="58" rx="8" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+  <text x="780" y="532" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Slack — a named human is on the hook</text>
+  <text x="780" y="549" font-size="10.5" fill="#475569" text-anchor="middle">signed Linear webhook, fires on escalation only</text>
+  <text x="780" y="563" font-size="10.5" fill="#b45309" text-anchor="middle">nothing else pings Slack</text>
 </svg>

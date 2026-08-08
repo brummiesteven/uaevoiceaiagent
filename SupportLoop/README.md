@@ -106,9 +106,12 @@ otherwise a loop reaching nobody looks green, because there is always a name on 
 
 Copy `.env.example` to `.env.local`. Every integration degrades rather than crashing: a
 missing Supabase key falls back to in-process rows, a missing Linear key still stores the
-report, and both say so on `/triage`. The two that do not degrade are
-`SUPPORT_AGENT_SECRET` (refuses to serve in production) and `LINEAR_WEBHOOK_SECRET`
-(rejects every delivery).
+report, and both say so on `/triage`. The three that do not degrade are all secrets, and
+deliberately so: `SUPPORT_AGENT_SECRET` (refuses to serve in production),
+`LINEAR_WEBHOOK_SECRET` (rejects every delivery), and `ELEVENLABS_WEBHOOK_SECRET` (returns
+500 rather than accept an unverified transcript). An open endpoint on any of the three is
+worse than a closed one — flooding the Linear board, forging a Slack escalation, and
+writing unverified transcripts into the database respectively.
 
 ## Running it
 
@@ -127,8 +130,8 @@ https://uae-voice-support-loop.vercel.app
 
 | What | Where |
 |---|---|
-| Agent files a report (B registers this as the `file_issue` webhook tool) | `POST /api/agent/ticket`, header `x-support-secret` |
-| Post-call transcript (B points the ElevenLabs `post_call_transcription` webhook here) | `POST /api/elevenlabs-webhook` |
+| Agent files a report — registered as the agent's `file_issue` tool, verified on a live call | `POST /api/agent/ticket`, header `x-support-secret` |
+| Post-call transcript — the ElevenLabs `post_call_transcription` webhook points here, registered and verifying | `POST /api/elevenlabs-webhook` |
 | Escalation in, Slack out — already registered on the Linear team, Issue events | `POST /api/linear-webhook` |
 | Audit trail for a demo, no Linear account needed | `/triage` |
 

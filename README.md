@@ -57,6 +57,84 @@ service the agent's decision passes through — the agent calls the MCP server d
 
 See `docs/architecture.svg` for the diagram.
 
+## Architecture — the whole system
+
+Three lanes, and which lane a thing sits in is the point. Context.dev runs **before** any
+call and never during one; Devin runs **after** a call has already gone wrong.
+
+```
+CAPTURE TIME — runs before any call, never inside one
+─────────────────────────────────────────────────────────────────────────────────
+  data.dubai rendered pages      DEWA tariffs       RTA · Parkin entitlements
+  (headline statistics; the           │                      │
+   F5 WAF blocks the API route)       │                      │
+              └───────────────┬───────┴──────────────────────┘
+                              │  Context.dev — structured extraction
+                              │  (web-scrape-markdown / web-extract, UAE-routed)
+                              ▼
+              MCPServer/data/indicators.json · living-in-dubai.json
+                              │  committed to the repo, loaded once at boot
+                              ▼
+══════════════════════ in-memory catalogue ══════════════════════════════════════
+                              ▲
+CALL TIME — nothing in this lane touches the network                │ single-digit ms
+─────────────────────────────────────────────────────────────────────────────────
+  Caller ──speaks──▶ Frontend ──▶ ElevenLabs Agent ──MCP/HTTP──▶ MCP Server
+  (EN · العربية)     voice console   STT · LLM · TTS                  │ boot only
+                                          │                           ▼
+                                          │                  data.dubai /o/c
+                                          │                  public REST, cached
+                                          │
+                    caller is unhappy ────┘
+                    file_issue — a webhook tool, deliberately NOT MCP
+                                          │
+REPAIR LOOP — no latency budget, deliberately separate
+─────────────────────────────────────────┼───────────────────────────────────────
+                                          ▼
+                            SupportLoop · /api/agent/ticket
+                                          │  row written FIRST, before
+                                          │  anything else can fail
+                                          ▼
+                                 Supabase · call_feedback
+                                          │
+                                          ▼
+                                   Linear issue created
+                                          │  @devin mentioned in a comment
+                                          │  (assignment silently no-ops — see
+                                          │   TECH-SPEC §06)
+                                          ▼
+                            ╔═════════════════════════════╗
+                            ║   Devin  (Cognition)        ║  first responder
+                            ║   autonomous engineer       ║  on every ticket
+                            ╚═════════════════════════════╝
+                                          │
+                    ┌─────────────────────┴──────────────────────┐
+                    ▼                                            ▼
+             fixes it                                    can't fix it
+             opens a PR                                  labels needs-engineer
+             issue closes                                         │
+                    │                                             ▼
+                    │                            Linear webhook (HMAC-SHA256)
+                    │                                             │
+                    │                                             ▼
+                    │                                  Slack — a named human
+                    │                                  is now on the hook
+                    └──────────────────┬──────────────────────────┘
+                                       ▼
+                        /triage — every report, live Linear state,
+                        through to the PR that fixed it
+```
+
+**Why the lanes matter.** Context.dev is a capture tool, not a runtime dependency —
+its output is committed JSON, so a call never waits on a scrape and the voice path stays
+inside its latency budget. Devin sits entirely outside the call: by the time it runs, the
+caller has already hung up, so it has no latency budget to blow either. Slack is touched
+only in the one branch where the loop has stalled on a human.
+
+A live Context.dev fetcher does exist (`MCPServer/src/live.js`) and works, but it isn't
+registered as a tool and so isn't drawn in the call lane — the two fetches measured 15.5s
+and 24.4s. That's the lane boundary being enforced, not an omission. See `TECH-SPEC.md` §5.
+
 ## Support loop
 
 A second, separate flow handles a caller who is unhappy with the service or wants to
@@ -92,13 +170,28 @@ pull request that fixed it, without needing an account on our workspace. Slack i
 for the two cases where the loop has stalled on a person: Devin was never reached, or Devin
 escalated. See `SupportLoop/README.md`.
 
-**This is wired to the live agent.** `file_issue` is registered as a webhook tool
-(`ElevenLabsAgent/agent-settings.json`'s `tool_ids`), with `conversation_id` bound to
+### Live, and closed end to end
+
+```
+https://uae-voice-support-loop.vercel.app
+```
+
+| What | Where | State |
+|---|---|---|
+| Agent files a report | `POST /api/agent/ticket`, header `x-support-secret` | Live. Registered as the agent's `file_issue` tool; 401 unauthenticated, 200 authenticated, verified against production |
+| Escalation in, Slack out | `POST /api/linear-webhook` | Live. Registered on the Linear team for Issue events; real deliveries verified, forged signatures rejected |
+| Post-call transcript | `POST /api/elevenlabs-webhook` | Live. Signed deliveries accepted, forged signatures rejected with `401 Signature mismatch` |
+| Audit trail, no Linear account needed | `/triage` | Live |
+
+**A caller can now do this by voice.** `file_issue` is registered as a webhook tool in
+`ElevenLabsAgent/agent-settings.json`'s `tool_ids`, with `conversation_id` bound to
 ElevenLabs' `system__conversation_id` dynamic variable rather than left for the LLM to
-recall. A caller talking to the live agent can file a ticket mid-call and hear it read
-back as a spelled-out reference (e.g. "P E R 2 1") — verified live, ticket visible on
-`/triage` within seconds. The post-call transcript webhook (attaches the call transcript
-to the ticket) is a separate, still-open step — see `TECH-SPEC.md` §5.
+recall — a live test call produced a real ticket (`PER-21`) with the agent reading the
+reference back spelled out, visible on `/triage` within seconds.
+
+Everything behind that runs in production on real Linear and real Slack, not a mock. The
+post-call transcription webhook is registered workspace-wide in ElevenLabs and its signing
+secret is set, so transcripts verify and attach to the ticket they belong to.
 
 ## Ownership
 
@@ -212,10 +305,9 @@ SupportLoop/              D — the Next.js app behind the support flow
 
 - The frontend's voice call is simulated by default (see How it works above) — it needs
   `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` set to actually talk to the live agent.
-- The support loop's `file_issue` webhook is attached to the live agent and verified
-  end to end. The post-call transcript webhook is not yet configured (needs a one-time
-  secret from the ElevenLabs dashboard, sent to D) — until then, filed tickets don't get
-  the call transcript attached.
+- A ticket's transcript arrives minutes after the ticket does — ElevenLabs only posts it
+  once the call finishes processing. Opening `/triage` straight after a call shows the
+  report with an empty transcript panel; that's the expected order, not a failure.
 - `content/services/*.json` are hand-written placeholders, not a verified scrape — see
   `AGENTS.md` before quoting a value from one as fact.
 - Root `/triage` (persona test results) and `SupportLoop`'s `/triage` (ticket audit trail)
