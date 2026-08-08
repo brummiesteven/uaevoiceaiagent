@@ -1,0 +1,5 @@
+.vercel
+.env*
+# .env.example is the documented list of what to set — it must stay tracked.
+# Without this negation `.env*` above silently untracks it.
+!.env.example

@@ -119,7 +119,21 @@ npm test           # assertions on the rules worth breaking a build over
 npm run typecheck && npm run lint && npm run build
 ```
 
-Deploy on Vercel with **Root Directory = `SupportLoop`**.
+## Live deployment
+
+```
+https://uae-voice-support-loop.vercel.app
+```
+
+| What | Where |
+|---|---|
+| Agent files a report (B registers this as the `file_issue` webhook tool) | `POST /api/agent/ticket`, header `x-support-secret` |
+| Post-call transcript (B points the ElevenLabs `post_call_transcription` webhook here) | `POST /api/elevenlabs-webhook` |
+| Escalation in, Slack out — already registered on the Linear team, Issue events | `POST /api/linear-webhook` |
+| Audit trail for a demo, no Linear account needed | `/triage` |
+
+Deployed from `SupportLoop/` as the Vercel project root, so `vercel deploy` is run from
+this directory rather than the repo root.
 
 Database schema is `supabase/schema.sql`; migrations applied on top live in
 `supabase/migrations/`. Escalation is deliberately not a column — Linear is the single
