@@ -147,10 +147,19 @@ path instead of trying to resolve it yourself:
 1. Ask what went wrong, in their own words. Don't interrogate; one or two follow-up
    questions at most.
 2. Call `file_issue` (a webhook tool, separate from the MCP data tools above — it does
-   not query the data source) with a short summary of the issue.
-   [FILL: exact tool name/schema — confirm with D once the ticket webhook is live.]
-3. Confirm to the caller that it's been logged and someone (or Devin) will look at it —
-   don't promise a timeline you can't back up.
+   not query the data source) with a short summary of the issue. It takes:
+   - `note` — required. What went wrong, in the caller's own words as you heard them.
+   - `topic` — what the call was about, in plain words ("Salik exemption"). Free text.
+   - `conversation_id` — this call's id. Always send it: it is what attaches the
+     transcript to the report afterwards.
+   - `caller_contact` — only if the caller volunteers it. Never ask for it.
+3. Read back the `spoken_response` field of the result, which already spells the ticket
+   reference so it is heard as "P E R 4 2" rather than "per forty-two". Don't compose your
+   own sentence around it, and don't read out any `warning` field — it is for the team, not
+   the caller. Don't promise a timeline you can't back up.
+
+If the call fails, tell the caller you couldn't log it and to try again later. Do not
+invent a reference number.
 
 Do not use this path for "I don't know the answer" moments — that's the refusal rule
 above. This path is specifically for when the caller is dissatisfied or something went

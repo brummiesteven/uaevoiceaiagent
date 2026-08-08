@@ -60,16 +60,26 @@ User (speaks/writes an issue, mid-call or at the end of the call)
 ElevenLabs Agent  — takes down the issue, calls a webhook tool (outside MCP)
         │
         ▼
-Ticket database  — a ticket row is written
+Ticket database  — a ticket row is written, before anything else can fail
         │
         ▼
-Linear issue  — created from the ticket, assigned to Devin
+Linear issue  — created from the ticket, Devin mentioned to start a session
         │
         ▼
 Devin (Cognition)  — works the ticket
-   ├─ resolved → ticket closed
-   └─ can't resolve → flagged: engineer needed
+   ├─ resolved → issue closed → the report closes with it
+   └─ can't resolve → labels it `needs-engineer` → Slack pings a human
 ```
+
+A caller who took the trouble to report something has already spent their patience, so the
+row is written first and returned even if Linear is down — an un-ticketed report is still
+visible and still recoverable, a dropped one is gone.
+
+The loop is auditable end to end at `/triage`: every report, how it came in, what the
+caller said, and the Linear state read live on each load — through to the pull request
+that fixed it, without needing an account on our workspace. Slack is reserved for the two
+cases where the loop has stalled on a person: Devin was never reached, or Devin escalated.
+See `SupportLoop/README.md`.
 
 ## Ownership
 
@@ -78,7 +88,7 @@ Devin (Cognition)  — works the ticket
 | **A** | Data source the MCP server reads from |
 | **B** | ElevenLabs agent — prompt, decision logic for which tool to call and when, voice/accent tuning. See `ElevenLabsAgent/` |
 | **C** | MCP server — tools, connects to the data source |
-| **D** | Support loop — ticket database, the webhook the agent calls to file an issue, Linear → Devin wiring |
+| **D** | Support loop — ticket database, the webhook the agent calls to file an issue, Linear → Devin wiring, escalation to Slack, the `/triage` audit trail. See `SupportLoop/` |
 
 ## Requirements
 
@@ -86,8 +96,8 @@ Devin (Cognition)  — works the ticket
 - MCP server reachable over public HTTPS, streamable HTTP transport — ElevenLabs does not
   support stdio (C)
 - Access to the data source the MCP server reads from (A)
-- Ticket database, a webhook endpoint the agent can call to file an issue, and a Linear
-  team with the Devin integration installed (D)
+- Supabase project, a Linear team with the Devin integration installed, a Slack incoming
+  webhook, and somewhere to deploy the Next.js app (D)
 
 ## Repo layout
 
@@ -101,11 +111,19 @@ MCPServer/               C — the MCP server, its tools and data
   SETUP.md                 start here: nothing to a working voice agent, ~15 min
   README.md                tools, data sources, known landmines
   agent-prompt.md          the prompt this was tested against, and why each rule exists
+
+SupportLoop/             D — the Next.js app behind the support flow
+  README.md                the webhook contract for B, Slack/Linear setup, landmines
+  app/api/agent/ticket     the webhook the agent calls to file a report
+  app/api/linear-webhook   escalation in, Slack ping out
+  app/api/elevenlabs-webhook  post-call transcript, joined onto the report
+  app/triage               every report and where it got to, read live from Linear
+  app/report               fallback form for anyone not on a call
+  supabase/schema.sql      call_feedback and tickets
 ```
 
-The ticket database/webhook/Linear wiring (D) lives in its own path once pushed — see its
-docs when those land. The MCP server reads data.dubai's public API directly, so there is
-no separate data-source component to stand up.
+The MCP server reads data.dubai's public API directly, so there is no separate
+data-source component to stand up.
 
 ## Known limits
 
