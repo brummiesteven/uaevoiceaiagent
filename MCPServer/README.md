@@ -1,4 +1,4 @@
-# MCP Server — component C
+# AlHammadi — MCP Server (component C)
 
 Voice-facing MCP server over Dubai's official open data, plus the practical
 living-in-Dubai information a caller actually rings up about.
