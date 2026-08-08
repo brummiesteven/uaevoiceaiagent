@@ -13,14 +13,19 @@ export function VoiceConsole({ service }: { service: ServiceRecord }) {
 
   const isBusy = call.state === "connecting" || call.state === "active";
 
-  const label =
+  // The button's own label is always the action it performs (talk / stop) —
+  // live status (connecting/listening/speaking) is shown separately below,
+  // so pressing it doesn't require re-reading a label that just changed.
+  const label = isBusy ? "Press to stop" : "Press to talk";
+
+  const statusText =
     call.state === "connecting"
       ? "Connecting…"
       : call.state === "active"
         ? call.isSpeaking
           ? "Speaking…"
           : "Listening…"
-        : "Press to talk";
+        : null;
 
   const announcement = useMemo(() => {
     if (call.state === "error") return call.error ?? "Something went wrong with the call.";
@@ -55,6 +60,12 @@ export function VoiceConsole({ service }: { service: ServiceRecord }) {
           onToggle={handleToggle}
           disabled={call.state === "connecting"}
         />
+
+        {statusText && (
+          <p className={styles.statusText} data-speaking={call.isSpeaking}>
+            {statusText}
+          </p>
+        )}
 
         {call.state === "error" && (
           <div className={styles.errorBox} role="alert">

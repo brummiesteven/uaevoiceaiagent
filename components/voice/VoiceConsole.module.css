@@ -16,6 +16,17 @@
   max-width: none;
 }
 
+.statusText {
+  margin: -0.5rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.statusText[data-speaking="true"] {
+  color: var(--teal);
+}
+
 .stage {
   display: flex;
   flex-direction: column;
