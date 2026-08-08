@@ -1,9 +1,9 @@
 {
-  "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; sync-agent.ts PATCHes it to match this file on every push to main. Field names verified against https://elevenlabs.io/docs/api-reference/agents/update — see notes below on the two items that still need live-account confirmation.",
+  "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; sync-agent.ts PATCHes it to match this file on every push to main. Field names verified against https://elevenlabs.io/docs/api-reference/agents/update — see notes below on the one item that still needs live-account confirmation.",
 
   "first_message": {
-    "default": "Hi, I'm here to help with UAE services — what's going on?",
-    "_why": "Agent-level fallback for direct/dashboard testing where no session-start override is passed. Real per-call variety comes from the UI picking randomly from intros.json and passing it as a conversation_config_override.agent.first_message (or Conversation.startSession({ overrides }) in the JS SDK) — see intros.json. This default is just intros.json's first entry so a plain test call still gets a sensible greeting."
+    "default": "Hello! You've reached Dubai's information line. I can help with living here — utility bills, getting around, accessible services and permits, or anything the city publishes data on. What can I help you with?",
+    "_why": "Agent-level fallback for direct/dashboard testing where no session-start override is passed. Real per-call variety comes from the UI picking randomly from intros.json and passing it as a conversation_config_override.agent.first_message (or Conversation.startSession({ overrides }) in the JS SDK) — see intros.json. This default is intros.json's first entry — C's exact tested first_message, verified working end to end against the real MCP server."
   },
 
   "language": {
@@ -20,8 +20,9 @@
   },
 
   "llm": {
-    "model": "[FILL: pick from the actual dropdown in the ElevenLabs dashboard when creating the agent]",
-    "_why": "Docs did not give a reliable enum for this field — different doc pages returned inconsistent model-version strings. Pick a low-latency conversational model from whatever the dashboard actually offers rather than guessing a string here."
+    "model": "claude-sonnet-5",
+    "temperature": 0.3,
+    "_why": "C tested this against the real MCP server: gemini-2.0-flash (the old placeholder here) did not reliably call tools, and when it skipped them it fabricated a confident but wrong Dubai population figure instead of admitting it didn't know. claude-sonnet-5 called tools reliably. Temperature 0.3 is the middle of C's recommended 0.1-0.4 range for factual/government data — creative variation here produces wrong numbers, not charm."
   },
 
   "tts": {
@@ -46,10 +47,8 @@
     "_json_placement_unconfirmed": "Two doc sources disagreed on where this goes in the actual PATCH body: agent.prompt.built_in_tools vs. an entry {\"type\": \"system\", \"name\": \"language_detection\"} inside agent.prompt.tools. sync-agent.ts currently emits the 'tools array' shape as the best-supported guess — verify against a GET on the real agent once one exists and correct if wrong."
   },
 
-  "mcp_server_ids": [],
-  "native_mcp_server_ids": [],
-  "_mcp_server_ids_note": "Populate once C's MCP server is registered as a resource (dashboard, or a separate 'create MCP server' API call not yet made anywhere in this repo) — these hold that resource's ID, not a tool definition. mcp_server_ids vs native_mcp_server_ids: verify with C which one applies to their setup once the server exists.",
+  "_mcp_note": "MCP server registration is intentionally NOT configured here. C's MCP server (MCPServer/) has no stable URL yet (local + cloudflared tunnel, URL changes every restart), and MCPServer/scripts/reconnect.js already owns registering it and attaching it to the agent via mcp_server_ids on every reconnect. sync-agent.ts deliberately never touches that field — see its buildAgentPatch() comment. Run reconnect.js after starting the tunnel; don't add mcp_server_ids here.",
 
   "tool_ids": [],
-  "_tool_ids_note": "Holds the ID of the file_issue webhook tool resource (see prompt.md's 'Filing an issue' section) once D's ticket webhook exists and the tool is registered with ElevenLabs. Like mcp_server_ids, this is an ID reference, not an inline tool definition."
+  "_tool_ids_note": "Holds the ID of the file_issue webhook tool resource (see prompt.md's 'Filing an issue' section) once D's ticket webhook exists and the tool is registered with ElevenLabs. This is an ID reference, not an inline tool definition."
 }
