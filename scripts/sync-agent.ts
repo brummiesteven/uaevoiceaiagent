@@ -7,6 +7,7 @@
  *
  *   npm run sync:agent            push prompt + knowledge base
  *   npm run sync:agent -- --dry   print what would be pushed
+ *   npm run sync:agent:check      the dry run CI runs on every PR
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -83,8 +84,35 @@ async function uploadKnowledgeBase(): Promise<KnowledgeBaseEntry[]> {
   return entries;
 }
 
+/**
+ * A `[FILL: ...]` left in the prompt is not a documentation problem here — the agent
+ * reads the prompt aloud. "Call [FILL: helpline number]" is what a caller would hear
+ * in the refusal path. The same is true of the knowledge base. Fail before the PATCH,
+ * and fail on pull requests too, so a Devin repair PR cannot introduce one.
+ */
+function assertNoPlaceholders(files: Record<string, string>) {
+  const offenders = Object.entries(files).flatMap(([label, contents]) =>
+    contents
+      .split("\n")
+      .map((line, i) => ({ line: line.trim(), n: i + 1 }))
+      .filter(({ line }) => line.includes("[FILL"))
+      .map(({ line, n }) => `  ${label}:${n}  ${line}`),
+  );
+  if (offenders.length === 0) return;
+  process.stderr.write(
+    `Refusing to sync: the agent would read these placeholders aloud.\n${offenders.join("\n")}\n`,
+  );
+  process.exit(1);
+}
+
 async function main() {
   const prompt = fs.readFileSync(path.join(process.cwd(), "agent-config", "prompt.md"), "utf8");
+  assertNoPlaceholders({
+    "agent-config/prompt.md": prompt,
+    ...Object.fromEntries(
+      getServices().map((s) => [`content/services/${s.slug}.json`, toKnowledgeBaseDocument(s).text]),
+    ),
+  });
   process.stdout.write(`Prompt: ${prompt.length} chars\n`);
 
   const knowledgeBase = await uploadKnowledgeBase();

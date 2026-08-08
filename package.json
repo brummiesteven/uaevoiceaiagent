@@ -9,11 +9,13 @@
     "lint": "eslint .",
     "scrape": "tsx scripts/scrape.ts",
     "sync:agent": "tsx scripts/sync-agent.ts",
+    "sync:agent:check": "tsx scripts/sync-agent.ts --dry",
     "test:adversarial": "tsx scripts/adversarial/run.ts",
     "test:adversarial:audio": "tsx scripts/adversarial/audio.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@elevenlabs/react": "^1.12.0",
     "@supabase/supabase-js": "^2.109.0",
     "next": "15.5.23",
     "react": "19.1.0",
