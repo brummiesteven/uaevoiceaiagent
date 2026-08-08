@@ -57,6 +57,80 @@ service the agent's decision passes through — the agent calls the MCP server d
 
 See `docs/architecture.svg` for the diagram.
 
+## Architecture — the whole system
+
+Three lanes, and which lane a thing sits in is the point. Context.dev runs **before** any
+call and never during one; Devin runs **after** a call has already gone wrong.
+
+```
+CAPTURE TIME — runs before any call, never inside one
+─────────────────────────────────────────────────────────────────────────────────
+  data.dubai rendered pages      DEWA tariffs       RTA · Parkin entitlements
+  (headline statistics; the           │                      │
+   F5 WAF blocks the API route)       │                      │
+              └───────────────┬───────┴──────────────────────┘
+                              │  Context.dev — structured extraction
+                              │  (web-scrape-markdown / web-extract, UAE-routed)
+                              ▼
+              MCPServer/data/indicators.json · living-in-dubai.json
+                              │  committed to the repo, loaded once at boot
+                              ▼
+══════════════════════ in-memory catalogue ══════════════════════════════════════
+                              ▲
+CALL TIME — nothing in this lane touches the network                │ single-digit ms
+─────────────────────────────────────────────────────────────────────────────────
+  Caller ──speaks──▶ Frontend ──▶ ElevenLabs Agent ──MCP/HTTP──▶ MCP Server
+  (EN · العربية)     voice console   STT · LLM · TTS                  │ boot only
+                                          │                           ▼
+                                          │                  data.dubai /o/c
+                                          │                  public REST, cached
+                                          │
+                    caller is unhappy ────┘
+                    file_issue — a webhook tool, deliberately NOT MCP
+                                          │
+REPAIR LOOP — no latency budget, deliberately separate
+─────────────────────────────────────────┼───────────────────────────────────────
+                                          ▼
+                            SupportLoop · /api/agent/ticket
+                                          │  row written FIRST, before
+                                          │  anything else can fail
+                                          ▼
+                                 Supabase · call_feedback
+                                          │
+                                          ▼
+                                   Linear issue created
+                                          │  @devin mentioned in a comment
+                                          │  (assignment silently no-ops — see
+                                          │   TECH-SPEC §06)
+                                          ▼
+                            ╔═════════════════════════════╗
+                            ║   Devin  (Cognition)        ║  first responder
+                            ║   autonomous engineer       ║  on every ticket
+                            ╚═════════════════════════════╝
+                                          │
+                    ┌─────────────────────┴──────────────────────┐
+                    ▼                                            ▼
+             fixes it                                    can't fix it
+             opens a PR                                  labels needs-engineer
+             issue closes                                         │
+                    │                                             ▼
+                    │                            Linear webhook (HMAC-SHA256)
+                    │                                             │
+                    │                                             ▼
+                    │                                  Slack — a named human
+                    │                                  is now on the hook
+                    └──────────────────┬──────────────────────────┘
+                                       ▼
+                        /triage — every report, live Linear state,
+                        through to the PR that fixed it
+```
+
+**Why the lanes matter.** Context.dev is a capture tool, not a runtime dependency —
+its output is committed JSON, so a call never waits on a scrape and the voice path stays
+inside its latency budget. Devin sits entirely outside the call: by the time it runs, the
+caller has already hung up, so it has no latency budget to blow either. Slack is touched
+only in the one branch where the loop has stalled on a human.
+
 ## Support loop
 
 A second, separate flow handles a caller who is unhappy with the service or wants to
@@ -92,10 +166,28 @@ pull request that fixed it, without needing an account on our workspace. Slack i
 for the two cases where the loop has stalled on a person: Devin was never reached, or Devin
 escalated. See `SupportLoop/README.md`.
 
-**This isn't wired to the live agent yet.** `ElevenLabsAgent/agent-settings.json`'s
-`tool_ids` is still empty — the webhook itself works (you can call it directly, and Devin
-has picked up and replied to a real ticket filed that way), but a caller talking to the
-live agent cannot file one through the call yet. See `TECH-SPEC.md` §5 for what's left.
+### Live
+
+```
+https://uae-voice-support-loop.vercel.app
+```
+
+| What | Where | State |
+|---|---|---|
+| Agent files a report | `POST /api/agent/ticket`, header `x-support-secret` | Live. 401 unauthenticated, 200 authenticated, verified against production |
+| Escalation in, Slack out | `POST /api/linear-webhook` | Live. Registered on the Linear team for Issue events; real deliveries verified, forged signatures rejected |
+| Post-call transcript | `POST /api/elevenlabs-webhook` | Live. Signed deliveries accepted, forged signatures rejected with `401 Signature mismatch` |
+| Audit trail, no Linear account needed | `/triage` | Live |
+
+Everything from "report filed" through "Slack pings a human" runs in production, on real
+Linear and real Slack, not a mock. The post-call transcription webhook is registered
+workspace-wide in ElevenLabs and its signing secret is set, so transcripts verify and
+attach.
+
+**One gap remains:** `ElevenLabsAgent/agent-settings.json`'s `tool_ids` is still empty, so
+a caller on a live call has no route to the endpoint. Today the ways in are the `/report`
+form and a direct POST — Devin has picked up and replied to a real ticket filed that way.
+Registering the `file_issue` webhook tool closes it. See `TECH-SPEC.md` §5.
 
 ## Ownership
 
@@ -209,8 +301,11 @@ SupportLoop/              D — the Next.js app behind the support flow
 
 - The frontend's voice call is simulated by default (see How it works above) — it needs
   `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` set to actually talk to the live agent.
-- The support loop's webhook works standalone but isn't attached to the live agent yet
-  (`tool_ids` empty) — a caller can't file a ticket through a real call today.
+- The support loop is deployed and verified in production, but isn't attached to the live
+  agent yet (`tool_ids` empty) — a caller can't file a ticket through a real call today.
+- Transcripts only attach to a report when the agent sends `conversation_id` with the
+  ticket — without it the two halves have no join key, and the ticket arrives with an empty
+  transcript panel.
 - `content/services/*.json` are hand-written placeholders, not a verified scrape — see
   `AGENTS.md` before quoting a value from one as fact.
 - Root `/triage` (persona test results) and `SupportLoop`'s `/triage` (ticket audit trail)
