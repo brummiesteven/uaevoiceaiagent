@@ -1,4 +1,4 @@
-# Setup — from nothing to a working voice agent
+# AlHammadi — setup, from nothing to a working voice agent
 
 Written for someone who has not done this before. Follow it top to bottom and it works.
 Roughly 15 minutes. Every step says what you should see, so you know it worked before
