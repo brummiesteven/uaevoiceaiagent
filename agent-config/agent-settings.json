@@ -1,5 +1,5 @@
 {
-  "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; scripts/sync-agent.ts PATCHes it to match this file on every push to main.",
+  "_comment": "Source of truth for the ElevenLabs agent's non-prompt config. The agent object itself is created once via the ElevenLabs dashboard; scripts/sync-agent.ts PATCHes it to match this file on every push to main. Run `npm run sync-agent:check` to validate the payload without calling the API. Run `npm run sync-agent:check` to validate the payload without calling the API.",
 
   "language": {
     "mode": "multi",

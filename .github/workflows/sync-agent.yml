@@ -4,21 +4,44 @@ on:
   push:
     branches: [main]
     paths:
-      - "ElevenLabsAgent/**"
+      - "agent-config/**"
       - "content/services/**"
+      - "scripts/sync-agent.ts"
+  pull_request:
+    paths:
+      - "agent-config/**"
+      - "content/services/**"
+      - "scripts/sync-agent.ts"
+
+# Two merges in quick succession would otherwise race to PATCH the same agent, and the
+# loser silently wins. During the build window, Devin PRs land close together.
+concurrency:
+  group: sync-agent
+  cancel-in-progress: false
 
 jobs:
-  sync-agent:
+  # Runs on pull requests too. Devin's repair PRs edit exactly these files, so a broken
+  # prompt or an unfilled placeholder gets caught before it reaches the live agent.
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+      - run: npm ci
+      - run: npm run sync-agent:check
 
-      - run: npm install
-
+  sync:
+    needs: check
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
       - run: npm run sync-agent
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}

@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "sync-agent": "tsx ElevenLabsAgent/sync-agent.ts"
+    "sync-agent": "tsx scripts/sync-agent.ts",
+    "sync-agent:check": "tsx scripts/sync-agent.ts --dry-run"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
