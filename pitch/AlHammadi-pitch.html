@@ -1,0 +1,505 @@
+<meta charset="utf-8">
+<title>AlHammadi — pitch deck</title>
+
+<style>
+  /* ------------------------------------------------------------------
+     Deliberately single-theme. A pitch deck is projected in a dark room,
+     where a light ground blooms and washes out; this commits to one look
+     rather than following the viewer's theme. Every colour is painted
+     explicitly so it holds on any host background.
+     ------------------------------------------------------------------ */
+  :root {
+    --ground:  #081410;   /* deep ink-green, not pure black */
+    --raised:  #0E211A;
+    --line:    #1C362C;
+    --ink:     #F0EDE4;   /* warm ivory — pairs with the green */
+    --muted:   #93A79D;
+    --faint:   #64796F;
+    --accent:  #4FE3A0;   /* mint — figures, highlights */
+    --amber:   #E5A857;   /* used on exactly one slide */
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: var(--ground); color: var(--ink);
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+  }
+
+  #deck { position: relative; height: 100vh; width: 100vw; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: clamp(32px, 7vw, 110px);
+    opacity: 0; visibility: hidden;
+    transform: translateY(14px);
+    transition: opacity .5s ease, transform .5s ease, visibility .5s;
+    overflow-y: auto;
+  }
+  .slide.on { opacity: 1; visibility: visible; transform: none; }
+
+  /* staggered entrance for direct children */
+  .slide.on > * { animation: rise .55s cubic-bezier(.2,.7,.3,1) backwards; }
+  .slide.on > *:nth-child(1) { animation-delay: .06s; }
+  .slide.on > *:nth-child(2) { animation-delay: .14s; }
+  .slide.on > *:nth-child(3) { animation-delay: .22s; }
+  .slide.on > *:nth-child(4) { animation-delay: .30s; }
+  .slide.on > *:nth-child(5) { animation-delay: .38s; }
+  .slide.on > *:nth-child(6) { animation-delay: .46s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .slide.on > * { transition: opacity .2s; animation: none !important; }
+  }
+
+  .inner { max-width: 1180px; width: 100%; margin: 0 auto; }
+
+  /* ---------- type ---------- */
+  .eyebrow {
+    font-family: var(--mono); font-size: clamp(10px, 1.05vw, 13px);
+    letter-spacing: .2em; text-transform: uppercase; color: var(--accent);
+    margin: 0 0 clamp(16px, 2.4vh, 30px);
+  }
+  h1 {
+    font-size: clamp(56px, 13vw, 190px); line-height: .86; letter-spacing: -.05em;
+    font-weight: 700; margin: 0;
+  }
+  h2 {
+    font-size: clamp(30px, 5.4vw, 78px); line-height: 1.02; letter-spacing: -.04em;
+    font-weight: 680; margin: 0 0 clamp(14px, 2.2vh, 28px); max-width: 17ch;
+    text-wrap: balance;
+  }
+  h2 em { color: var(--accent); font-style: normal; }
+  .lead {
+    font-size: clamp(17px, 1.85vw, 25px); line-height: 1.5; color: var(--muted);
+    max-width: 58ch; margin: 0 0 14px;
+  }
+  .lead strong { color: var(--ink); font-weight: 600; }
+  .kicker {
+    font-family: var(--mono); font-size: clamp(11px, 1.15vw, 14px);
+    letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 14px 0 0;
+  }
+
+  /* ---------- title slide ---------- */
+  .title-rule {
+    width: clamp(60px, 9vw, 130px); height: 3px; background: var(--accent);
+    margin: clamp(22px, 3.4vh, 40px) 0;
+  }
+
+  /* ---------- quote ---------- */
+  .quote {
+    font-size: clamp(26px, 4.6vw, 68px); line-height: 1.14; letter-spacing: -.032em;
+    font-weight: 600; max-width: 20ch; margin: 0 0 clamp(20px, 3vh, 38px);
+    text-wrap: balance;
+  }
+  .attrib {
+    font-family: var(--mono); font-size: clamp(11px, 1.15vw, 14px); line-height: 1.7;
+    color: var(--muted); max-width: 46ch; margin: 0;
+    border-left: 2px solid var(--accent); padding-left: 18px;
+  }
+
+  /* ---------- figures ---------- */
+  .figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: clamp(16px, 2.6vw, 44px); margin-top: clamp(18px, 3vh, 40px); }
+  .fig b {
+    display: block; font-size: clamp(52px, 9.5vw, 132px); line-height: .88;
+    letter-spacing: -.055em; font-weight: 700; font-variant-numeric: tabular-nums;
+    color: var(--accent); margin-bottom: 12px;
+  }
+  .fig.dim b { color: var(--ink); }
+  .fig span {
+    font-family: var(--mono); font-size: clamp(10px, 1vw, 13px); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); line-height: 1.5; display: block;
+  }
+
+  /* ---------- transcript ---------- */
+  .turn { display: grid; grid-template-columns: clamp(56px, 7vw, 92px) 1fr;
+          gap: clamp(14px, 2vw, 30px); margin-bottom: clamp(18px, 2.8vh, 34px); }
+  .who {
+    font-family: var(--mono); font-size: clamp(9px, .95vw, 12px); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--faint); text-align: right; padding-top: .7em;
+  }
+  .said { margin: 0; font-size: clamp(17px, 2.05vw, 30px); line-height: 1.42;
+          letter-spacing: -.015em; }
+  .turn.caller .said { font-weight: 640; }
+  .turn.agent .said { color: var(--muted); }
+  .said mark { background: none; color: var(--accent); font-weight: 640; }
+  .aside {
+    font-family: var(--mono); font-size: clamp(11px, 1.15vw, 14px); line-height: 1.65;
+    color: var(--faint); border-top: 1px solid var(--line); padding-top: 16px;
+    margin: clamp(8px, 1.6vh, 20px) 0 0; max-width: 62ch;
+  }
+  .aside b { color: var(--accent); font-weight: 600; }
+
+  /* ---------- flow ---------- */
+  .flow { display: flex; flex-direction: column; gap: 0; margin-top: clamp(10px, 2vh, 26px); }
+  .node {
+    background: var(--raised); border: 1px solid var(--line); border-radius: 6px;
+    padding: clamp(12px, 1.9vh, 20px) clamp(16px, 2vw, 26px);
+  }
+  .node b { display: block; font-size: clamp(15px, 1.75vw, 23px); letter-spacing: -.02em;
+            font-weight: 640; }
+  .node span { font-family: var(--mono); font-size: clamp(10px, 1vw, 12.5px);
+               color: var(--muted); letter-spacing: .04em; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi b { color: var(--accent); }
+  .link {
+    height: clamp(18px, 3vh, 34px); width: 2px; background: var(--line);
+    margin-left: clamp(24px, 3vw, 44px); position: relative;
+  }
+  .link span {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    font-family: var(--mono); font-size: clamp(9.5px, .95vw, 12px);
+    color: var(--faint); white-space: nowrap; letter-spacing: .06em;
+  }
+
+  /* ---------- vision ---------- */
+  .vis { display: grid; gap: clamp(12px, 1.8vh, 22px); margin-top: clamp(12px, 2vh, 26px); }
+  .vrow { display: grid; grid-template-columns: clamp(96px, 12vw, 160px) 1fr;
+          gap: clamp(16px, 2.4vw, 36px); align-items: baseline;
+          border-top: 1px solid var(--line); padding-top: clamp(12px, 1.8vh, 20px); }
+  .vrow .when { font-family: var(--mono); font-size: clamp(11px, 1.2vw, 15px);
+                color: var(--accent); letter-spacing: .06em; }
+  .vrow b { font-size: clamp(16px, 1.9vw, 26px); letter-spacing: -.02em; font-weight: 640;
+            display: block; margin-bottom: 5px; }
+  .vrow p { margin: 0; color: var(--muted); font-size: clamp(13.5px, 1.35vw, 18px);
+            line-height: 1.5; max-width: 62ch; }
+
+  /* ---------- limits ---------- */
+  .limits { list-style: none; padding: 0; margin: clamp(12px, 2vh, 26px) 0 0;
+            display: grid; gap: clamp(12px, 1.8vh, 20px); }
+  .limits li { border-left: 2px solid var(--amber); padding-left: clamp(14px, 1.8vw, 24px); }
+  .limits b { display: block; font-size: clamp(15px, 1.7vw, 22px); letter-spacing: -.018em;
+              margin-bottom: 4px; font-weight: 640; }
+  .limits span { color: var(--muted); font-size: clamp(13.5px, 1.3vw, 17px); line-height: 1.5;
+                 display: block; max-width: 64ch; }
+  .amber { color: var(--amber); }
+
+  /* ---------- chrome ---------- */
+  #bar { position: fixed; top: 0; left: 0; height: 2px; background: var(--accent);
+         width: 0; transition: width .45s cubic-bezier(.2,.7,.3,1); z-index: 20; }
+  #count { position: fixed; bottom: clamp(16px, 2.6vh, 30px); right: clamp(20px, 3vw, 46px);
+           font-family: var(--mono); font-size: clamp(10px, 1vw, 13px); color: var(--faint);
+           letter-spacing: .12em; z-index: 20; font-variant-numeric: tabular-nums; }
+  #hint { position: fixed; bottom: clamp(16px, 2.6vh, 30px); left: clamp(20px, 3vw, 46px);
+          font-family: var(--mono); font-size: clamp(10px, 1vw, 12px); color: var(--faint);
+          letter-spacing: .1em; z-index: 20; transition: opacity .6s; }
+  #hint.gone { opacity: 0; }
+  .nav { position: fixed; inset: 0; z-index: 10; display: flex; }
+  /* Back zone is deliberately narrow: a stray click mid-pitch should never
+     throw the deck backwards. Buttons are not focusable, so Enter/Space reach
+     the keydown handler once instead of firing click as well. */
+  .nav button { background: none; border: 0; cursor: pointer; opacity: 0; }
+  #prev { flex: 0 0 18%; }
+  #next { flex: 1; }
+  .arrows {
+    position: fixed; bottom: clamp(14px, 2.4vh, 28px); left: 50%;
+    transform: translateX(-50%); z-index: 20; display: flex; gap: 8px;
+  }
+  .arrows button {
+    font-family: var(--mono); font-size: 13px; line-height: 1;
+    background: var(--raised); color: var(--muted);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 7px 12px; cursor: pointer;
+  }
+  .arrows button:hover { color: var(--accent); border-color: var(--accent); }
+  .arrows button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div id="bar"></div>
+<div id="deck">
+
+  <!-- 1 -->
+  <section class="slide on">
+    <div class="inner">
+      <p class="eyebrow">Dubai · Voice · Open data</p>
+      <h1>AlHammadi</h1>
+      <div class="title-rule"></div>
+      <p class="lead" style="font-size:clamp(19px,2.3vw,32px);color:var(--ink);max-width:24ch;">
+        A phone line for Dubai's public data.
+      </p>
+      <p class="kicker">Ask out loud. Get an answer.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="quote">“Disability is in fact the inability to make progress and achievements.”</p>
+      <p class="attrib">HH Sheikh Mohammed bin Rashid Al Maktoum<br>
+      18 April 2017 — directing that people with disabilities<br>be known as People of Determination</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">The gap</p>
+      <h2>Dubai opened its data to the world. <em>You still need a screen to read it.</em></h2>
+      <p class="lead">
+        In 2015 Dubai became the first city anywhere to legally mandate the sharing, use and
+        reuse of its data. It worked. All of it now sits behind a search box, a filter, a
+        table and a download button.
+      </p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Published openly today</p>
+      <div class="figs">
+        <div class="fig"><b>598</b><span>datasets</span></div>
+        <div class="fig"><b>76</b><span>government entities</span></div>
+        <div class="fig dim"><b>0</b><span>that answer<br>a spoken question</span></div>
+      </div>
+      <p class="lead" style="margin-top:clamp(24px,4vh,54px)">
+        For most people that's friction. If you're blind, or navigating with a motor
+        impairment, or you simply find a dense administrative page hard going —
+        <strong>“open” and “reachable” are not the same word.</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">The fix</p>
+      <h2>So you ring up <em>and ask.</em></h2>
+      <p class="lead">
+        No app. No page. No form. English or العربية. An answer in a sentence or two, with
+        the source named.
+      </p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Real call · 1 of 3</p>
+      <div class="turn caller"><span class="who">Caller</span>
+        <p class="said">I use a wheelchair and I'm moving to Dubai next month. What help can I get with getting around?</p></div>
+      <div class="turn agent"><span class="who">Line</span>
+        <p class="said">There's quite a bit set up for wheelchair users here. You get <mark>free travel on the Metro and buses</mark> with a special nol card, wheelchair spaces on every carriage, low-floor buses, <mark>accessible taxis around the clock</mark>, and if you drive, a <mark>free parking permit</mark> plus <mark>Salik exemption</mark> on one vehicle.</p></div>
+      <p class="aside">Sourced from RTA and Parkin. It hands over the phone number so the caller can act on it.</p>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Real call · 2 of 3</p>
+      <div class="turn caller"><span class="who">Caller</span>
+        <p class="said">What will my electricity bill be if I use about 2500 units a month?</p></div>
+      <div class="turn agent"><span class="who">Line</span>
+        <p class="said">At around 2500 units a month you'd be looking at roughly <mark>750 dirhams</mark> total — that's DEWA's residential rate, and it climbs a bit more per unit the higher your usage goes.</p></div>
+      <p class="aside">DEWA's slabs are marginal, not flat. <b>A naïve calculation says 950</b> — a 27% overstatement, delivered confidently into someone's ear.</p>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Real call · 3 of 3</p>
+      <div class="turn caller"><span class="who">Caller</span>
+        <p class="said">What's the average rent for a two bedroom in Dubai Marina?</p></div>
+      <div class="turn agent"><span class="who">Line</span>
+        <p class="said">I don't have that exact figure to hand. What I can tell you is that the Land Department tracks property transaction and pricing data more broadly — want me to check what's available instead?</p></div>
+      <p class="aside"><b>The most important answer in the demo.</b> It doesn't have it, so it says so. It does not guess.</p>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Language</p>
+      <h2>Dubai's data ships bilingual. <em>The line doesn't have to stop there.</em></h2>
+      <p class="lead">
+        Every record in the catalogue carries both English and Arabic at source &mdash; title,
+        description, theme, publisher. We didn't translate anything. The city already did.
+      </p>
+      <p class="lead">
+        Which means the <strong>language of the answer is independent of the language of the
+        data</strong>. Speech in, speech out, in whatever language the caller actually speaks.
+      </p>
+      <p class="aside">Most people living in Dubai speak neither English nor Arabic at home. A line that only works in two languages isn't a line for everyone.</p>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Why it can be trusted</p>
+      <h2>A wrong number is <em>worse</em> than no number.</h2>
+      <p class="lead">
+        Early on, with no tools attached, we asked it how many people live in Dubai. It
+        answered <strong>“three million six hundred and fifty-three thousand, as of Q3
+        2023”</strong> — entirely invented, delivered with total confidence.
+      </p>
+      <p class="lead">
+        That is the failure this is built against. Every figure it speaks must come from a
+        tool result in that conversation. It has no trusted memory of its own.
+      </p>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">How it works</p>
+      <div class="flow">
+        <div class="node"><b>Caller</b><span>speaks — English or العربية</span></div>
+        <div class="link"><span>voice</span></div>
+        <div class="node"><b>ElevenLabs agent</b><span>hears · decides · speaks</span></div>
+        <div class="link"><span>MCP over streamable HTTP</span></div>
+        <div class="node hi"><b>AlHammadi MCP server</b><span>20 tools · 10 exposed to voice · 598 datasets in memory</span></div>
+        <div class="link"><span>hydrated once at boot</span></div>
+        <div class="node"><b>data.dubai · DEWA · RTA · Parkin</b><span>official sources</span></div>
+      </div>
+      <p class="aside">Nothing sits between the agent's decision and the data. An extra hop inside a live call is dead air — conversation falls apart past about 800 milliseconds.</p>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">What we built on</p>
+      <h2>Three tools, three jobs.</h2>
+      <div class="vis">
+        <div class="vrow"><span class="when">ElevenLabs</span>
+          <div><b>The interface</b>
+          <p>Speech in, the decision about what to look up, speech out &mdash; and the MCP connection to the data. Remove it and there is no call, and no way for the caller to reach any of this.</p></div></div>
+        <div class="vrow"><span class="when">context.dev</span>
+          <div><b>The data no API has</b>
+          <p>DEWA's tariff table, RTA's entitlements, Parkin's permits, Dubai's headline statistics &mdash; all published only as rendered pages. It also got us past the portal's firewall by routing through a UAE address.</p></div></div>
+        <div class="vrow"><span class="when">Devin</span>
+          <div><b>The support loop</b>
+          <p>A caller who isn't helped can say so, by voice. That becomes a ticket, and Devin is first responder &mdash; working what it can and flagging a human when it can't.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">Built and tested</p>
+      <div class="figs">
+        <div class="fig"><b>20</b><span>tools</span></div>
+        <div class="fig"><b>9</b><span>headline statistics</span></div>
+        <div class="fig"><b>10</b><span>services for people<br>of determination</span></div>
+        <div class="fig"><b>13/13</b><span>tests passing</span></div>
+      </div>
+      <p class="aside" style="margin-top:clamp(24px,4vh,54px)">Tool calls answer in single-digit milliseconds. The catalogue is held in memory, so a slow government portal can never stall a sentence mid-flow.</p>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">The vision it serves</p>
+      <h2>Three commitments Dubai <em>already made.</em></h2>
+      <div class="vis">
+        <div class="vrow"><span class="when">Nov 2013</span>
+          <div><b>My Community&hellip; A City for Everyone</b>
+          <p>HH Sheikh Hamdan bin Mohammed bin Rashid Al Maktoum — to make Dubai a city that includes People of Determination. Dubai Law No. 2 of 2014 followed, protecting their rights.</p></div></div>
+        <div class="vrow"><span class="when">Oct 2015</span>
+          <div><b>Dubai Data Law No. 26 of 2015</b>
+          <p>Issued by HH Sheikh Hamdan — making Dubai the first city in the world to mandate the sharing, use and reuse of its data. The reason 598 datasets exist to answer from.</p></div></div>
+        <div class="vrow"><span class="when">Apr 2017</span>
+          <div><b>People of Determination</b>
+          <p>HH Sheikh Mohammed bin Rashid Al Maktoum renamed people with disabilities in recognition of what they achieve. The National Policy followed the same year.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="inner">
+      <h2>Open data exists because of 2015.<br>The promise to reach everyone exists because of 2013 and 2017.</h2>
+      <p class="lead" style="font-size:clamp(19px,2.2vw,30px);color:var(--ink)">
+        <em style="color:var(--accent);font-style:normal">A voice line is simply what connects them.</em>
+      </p>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow amber">Honestly</p>
+      <h2>What's real — and what <em style="color:var(--amber)">isn't yet.</em></h2>
+      <ul class="limits">
+        <li><b>Row-level data is gated.</b><span>387 datasets publish an API, but it returns 401 without a key granted by email. The line explains how to request access rather than pretending it has the rows.</span></li>
+        <li><b>Tariffs and entitlements are a point-in-time capture.</b><span>They change. The line says “worth confirming with them” and gives the number — but it needs a refresh job before real use.</span></li>
+        <li><b>Arabic is instructed, not yet verified.</b><span>The data is bilingual and the agent is told to answer in Arabic. Nobody has yet sat through a full Arabic conversation end to end.</span></li>
+        <li><b>It has not been tested with People of Determination.</b><span>Built for them, with care about language and dignity, checked against official sources — but not yet validated by the people it's for. That's the first thing to fix.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <div class="inner">
+      <p class="eyebrow">The name</p>
+      <h2>Mohamed <em>Al Hammadi</em></h2>
+      <p class="lead">
+        The Emirati wheelchair racer who won the UAE's first Paralympic athletics gold —
+        the 800m T34 at Rio 2016 — with further medals at London 2012 and Tokyo.
+      </p>
+      <p class="lead">
+        <strong>This isn't a data project with an accessibility angle. It's an access
+        project built on data.</strong>
+      </p>
+      <p class="aside">A tribute. He has no involvement in this project and has not endorsed it.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" tabindex="-1" aria-hidden="true"></button>
+  <button id="next" tabindex="-1" aria-hidden="true"></button>
+</div>
+<div class="arrows">
+  <button id="prevBtn" aria-label="Previous slide">&larr;</button>
+  <button id="nextBtn" aria-label="Next slide">&rarr;</button>
+</div>
+<div id="count">01 / 17</div>
+<div id="hint">← → to move</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const bar = document.getElementById('bar');
+  const count = document.getElementById('count');
+  const hint = document.getElementById('hint');
+  let i = 0, moved = false;
+
+  const pad = n => String(n).padStart(2, '0');
+
+  function go(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+    count.textContent = `${pad(i + 1)} / ${pad(slides.length)}`;
+    if (!moved) { moved = true; hint.classList.add('gone'); }
+  }
+
+  for (const id of ['next', 'nextBtn']) document.getElementById(id).onclick = () => go(i + 1);
+  for (const id of ['prev', 'prevBtn']) document.getElementById(id).onclick = () => go(i - 1);
+
+  addEventListener('keydown', e => {
+    if (['ArrowRight', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); go(i + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key.toLowerCase() === 'f') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    }
+  });
+
+  go(0);
+</script>
