@@ -32,6 +32,31 @@ service the agent's decision passes through — the agent calls the MCP server d
 
 See `docs/architecture.svg` for the diagram.
 
+## Support loop
+
+A second, separate flow handles a caller who is unhappy with the service or wants to
+report an issue — during the call or at its end. This is deliberately **not** an MCP
+tool: it doesn't query the data source, it doesn't need to be fast, and it shouldn't be
+confused with the data-lookup path.
+
+```
+User (speaks/writes an issue, mid-call or at the end of the call)
+        │
+        ▼
+ElevenLabs Agent  — takes down the issue, calls a webhook tool (outside MCP)
+        │
+        ▼
+Ticket database  — a ticket row is written
+        │
+        ▼
+Linear issue  — created from the ticket, assigned to Devin
+        │
+        ▼
+Devin (Cognition)  — works the ticket
+   ├─ resolved → ticket closed
+   └─ can't resolve → flagged: engineer needed
+```
+
 ## Ownership
 
 | | Owns |
@@ -39,6 +64,7 @@ See `docs/architecture.svg` for the diagram.
 | **A** | Data source the MCP server reads from |
 | **B** | ElevenLabs agent — prompt, decision logic for which tool to call and when, voice/accent tuning. See `ElevenLabsAgent/` |
 | **C** | MCP server — tools, connects to the data source |
+| **D** | Support loop — ticket database, the webhook the agent calls to file an issue, Linear → Devin wiring |
 
 ## Requirements
 
@@ -46,6 +72,8 @@ See `docs/architecture.svg` for the diagram.
 - MCP server reachable over public HTTPS, streamable HTTP transport — ElevenLabs does not
   support stdio (C)
 - Access to the data source the MCP server reads from (A)
+- Ticket database, a webhook endpoint the agent can call to file an issue, and a Linear
+  team with the Devin integration installed (D)
 
 ## Repo layout
 
@@ -56,8 +84,8 @@ ElevenLabsAgent/
   sync-agent.ts            pushes prompt + settings to the live ElevenLabs agent
 ```
 
-MCP server (C) and data source (A) live in their own paths once pushed — see their
-respective docs when those land.
+MCP server (C), data source (A), and the ticket database/webhook/Linear wiring (D) live
+in their own paths once pushed — see their respective docs when those land.
 
 ## Known limits
 
